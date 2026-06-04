@@ -65,6 +65,7 @@ public class CreatePanel : UIPanel
         TotalPlayerSlider.onValueChanged.Invoke(TotalPlayerSlider.value);
 
         CreateBtn.onClick.AddListener(OnClickCreateBtn);
+        QuitBtn.onClick.AddListener(OnClickQuitBtn);
 
         UpdateView();
     }
@@ -124,6 +125,11 @@ public class CreatePanel : UIPanel
             PlayerNum = (int)PlayerSlider.value,
             AiNum = (int)AiSlider.value,
         });
+    }
+
+    private void OnClickQuitBtn()
+    {
+        UIMgr.Instance.HideTopPanel();
     }
 
     private void UpdateView()

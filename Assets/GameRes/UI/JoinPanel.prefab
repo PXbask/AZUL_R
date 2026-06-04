@@ -699,7 +699,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\u9ED8\u8BA47777"
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ba02a8cb804d0644b9459e18c450e550, type: 2}
   m_sharedMaterial: {fileID: 2989186182797742937, guid: ba02a8cb804d0644b9459e18c450e550, type: 2}
@@ -1762,6 +1762,7 @@ GameObject:
   - component: {fileID: 3060158225116017959}
   - component: {fileID: 1073487730670808085}
   - component: {fileID: 6760302001755439818}
+  - component: {fileID: 2613988214665101279}
   m_Layer: 5
   m_Name: JoinPanel
   m_TagString: Untagged
@@ -1806,7 +1807,7 @@ Canvas:
   m_OverrideSorting: 0
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
-  m_VertexColorAlwaysGammaSpace: 0
+  m_VertexColorAlwaysGammaSpace: 1
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
@@ -1852,6 +1853,22 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
+--- !u!114 &2613988214665101279
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7526805208437359555}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 12a9fb6a19fc23c4ba7ab5dd8308ad37, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ServerIpField: {fileID: 1606056358403828481}
+  ServerPortField: {fileID: 8911154760277067789}
+  JoinBtn: {fileID: 8572902877959476480}
+  QuitBtn: {fileID: 5824980153633267717}
 --- !u!1 &8051391573468588513
 GameObject:
   m_ObjectHideFlags: 0
@@ -2016,8 +2033,8 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 6579476970054526787}
   - {fileID: 2864073125001600357}
+  - {fileID: 6579476970054526787}
   - {fileID: 1497873293727260703}
   - {fileID: 9203244967980772562}
   m_Father: {fileID: 5575423324988912437}

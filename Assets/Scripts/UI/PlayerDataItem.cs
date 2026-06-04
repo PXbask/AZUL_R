@@ -15,10 +15,10 @@ public class PlayerDataItem : MonoBehaviour, IPoolObject
 
     string IPoolObject.PoolKey { get; set; } = PoolKey;
 
-    public void UpdateView(PlayerData data, bool isReady)
+    public void UpdateView(PlayerData data)
     {
         NameText.text = data.Name;
-        ReadyToggle.isOn = isReady;
+        ReadyToggle.isOn = data.IsReady;
     }
 
     public void OnSpawn() { }

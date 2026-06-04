@@ -15,4 +15,5 @@ public class PlayerData
     public int ClientId;
     public int GameId;
     public string Name;
+    public bool IsReady;
 }

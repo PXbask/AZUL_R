@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -179,6 +179,7 @@ public class UIMgr : MonoSingleton<UIMgr>
     private void ShowInternal(UIPanel panel, object data)
     {
         panel.gameObject.SetActive(true);
+        panel.transform.SetParent(_uiRoot, worldPositionStays: false);
         panel.OnShow(data);
     }
 

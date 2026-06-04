@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -11,6 +11,8 @@ public class EventMgr : MonoSingleton<EventMgr>
 {
     // Type -> 监听器列表（存储为 Delegate，运行时强转）
     private readonly Dictionary<Type, List<Delegate>> _listeners = new Dictionary<Type, List<Delegate>>();
+
+    private readonly Dictionary<NoneArgEventEnum, List<Delegate>> _noneArgListeners = new Dictionary<NoneArgEventEnum, List<Delegate>>();
 
     #region 注册 / 注销
 
@@ -25,6 +27,14 @@ public class EventMgr : MonoSingleton<EventMgr>
             _listeners[type].Add(handler);
     }
 
+    public void Subscribe(NoneArgEventEnum evt, Action handler)
+    {
+        if (!_noneArgListeners.ContainsKey(evt))
+            _noneArgListeners[evt] = new List<Delegate>();
+        if (!_noneArgListeners[evt].Contains(handler))
+            _noneArgListeners[evt].Add(handler);
+    }
+
     /// <summary>注销事件监听</summary>
     public void UnSubscribe<T>(Action<T> handler) where T : EventBase
     {
@@ -34,6 +44,16 @@ public class EventMgr : MonoSingleton<EventMgr>
             list.Remove(handler);
             if (list.Count == 0)
                 _listeners.Remove(type);
+        }
+    }
+
+    public void UnSubscribe(NoneArgEventEnum evt, Action handler)
+    {
+        if (_noneArgListeners.TryGetValue(evt, out List<Delegate> list))
+        {
+            list.Remove(handler);
+            if (list.Count == 0)
+                _noneArgListeners.Remove(evt);
         }
     }
 
@@ -65,6 +85,24 @@ public class EventMgr : MonoSingleton<EventMgr>
             catch (Exception e)
             {
                 Debug.LogError($"[EventMgr] Exception in handler for {type.Name}: {e}");
+            }
+        }
+    }
+
+    public void Trigger(NoneArgEventEnum evt)
+    {
+        if (!_noneArgListeners.TryGetValue(evt, out List<Delegate> list) || list.Count == 0)
+            return;
+        Delegate[] snapshot = list.ToArray();
+        foreach (Delegate d in snapshot)
+        {
+            try
+            {
+                ((Action)d)?.Invoke();
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[EventMgr] Exception in handler for {evt}: {e}");
             }
         }
     }

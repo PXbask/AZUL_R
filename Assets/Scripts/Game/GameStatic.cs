@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -9,4 +9,6 @@ public static class GameStatic
 
     public static readonly ushort NgoDefaultPort = 7777;
     public static readonly ushort AiDefaultPort = 9999;
+
+    public static readonly string LocalIp = "127.0.0.1";
 }
