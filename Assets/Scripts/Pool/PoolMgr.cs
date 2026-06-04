@@ -16,6 +16,12 @@ public class PoolMgr : MonoSingleton<PoolMgr>
     // 对象池  key -> 缓存队列
     private readonly Dictionary<string, Queue<GameObject>> _pools = new Dictionary<string, Queue<GameObject>>();
 
+    // 各池最大缓存数量
+    private readonly Dictionary<string, int> _maxSizes = new Dictionary<string, int>();
+
+    [Tooltip("池配置文件，自动注册所有预制体信息")]
+    [SerializeField] private PoolConfig _config;
+
     [Tooltip("池对象的默认父节点，留空则使用 PoolMgr 自身")]
     [SerializeField] private Transform _poolRoot;
 
@@ -24,12 +30,23 @@ public class PoolMgr : MonoSingleton<PoolMgr>
         base.Awake();
         if (_poolRoot == null)
             _poolRoot = transform;
+        InitFromConfig();
+    }
+
+    private void InitFromConfig()
+    {
+        if (_config == null) return;
+        foreach (PoolConfigEntry entry in _config.entries)
+        {
+            if (entry == null || string.IsNullOrEmpty(entry.keyName) || entry.prefab == null) continue;
+            Register(entry.keyName, entry.prefab, entry.maxSize);
+        }
     }
 
     #region 注册 / 注销
 
     /// <summary>注册预制体到对象池</summary>
-    public void Register(string key, GameObject prefab)
+    public void Register(string key, GameObject prefab, int maxSize = 20)
     {
         if (_registry.ContainsKey(key))
         {
@@ -37,6 +54,26 @@ public class PoolMgr : MonoSingleton<PoolMgr>
             return;
         }
         _registry[key] = prefab;
+        int count = Mathf.Max(1, maxSize);
+        _maxSizes[key] = count;
+        Prewarm(key, prefab, count);
+    }
+
+    private void Prewarm(string key, GameObject prefab, int count)
+    {
+        if (!_pools.ContainsKey(key))
+            _pools[key] = new Queue<GameObject>();
+
+        Queue<GameObject> queue = _pools[key];
+        for (int i = 0; i < count; i++)
+        {
+            GameObject go = Instantiate(prefab, _poolRoot);
+            IPoolObject obj = go.GetComponent<IPoolObject>();
+            if (obj != null)
+                obj.PoolKey = key;
+            go.SetActive(false);
+            queue.Enqueue(go);
+        }
     }
 
     /// <summary>注销并销毁指定池的所有对象</summary>
@@ -76,13 +113,22 @@ public class PoolMgr : MonoSingleton<PoolMgr>
         if (obj == null) return;
         MonoBehaviour mb = obj as MonoBehaviour;
         if (mb == null) return;
-        obj.OnRecycle();
-        mb.gameObject.SetActive(false);
-        mb.transform.SetParent(_poolRoot);
 
         string key = obj.PoolKey;
         if (!_pools.ContainsKey(key))
             _pools[key] = new Queue<GameObject>();
+
+        int max = _maxSizes.TryGetValue(key, out int m) ? m : 20;
+        if (_pools[key].Count >= max)
+        {
+            obj.OnDispose();
+            Destroy(mb.gameObject);
+            return;
+        }
+
+        obj.OnRecycle();
+        mb.gameObject.SetActive(false);
+        mb.transform.SetParent(_poolRoot);
         _pools[key].Enqueue(mb.gameObject);
     }
 
