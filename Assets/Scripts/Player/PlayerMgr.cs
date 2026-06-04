@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -48,7 +49,8 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
             IsReady = false,
         };
         ConnectedPlayerData[clientId] = data;
-        EventMgr.Instance.Trigger(NoneArgEventEnum.PlayerStateChangeEvent);
+
+        NgoMgr.Instance.UpdateLobbyPlayerDataClientRpc(ConnectedPlayerData.Values.ToArray());
     }
 
     public void RemovePlayer(int clientId)
@@ -60,8 +62,28 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
         else
         {
             ConnectedPlayerData.Remove(clientId);
-            EventMgr.Instance.Trigger(NoneArgEventEnum.PlayerStateChangeEvent);
+
+            NgoMgr.Instance.UpdateLobbyPlayerDataClientRpc(ConnectedPlayerData.Values.ToArray());
         }
+    }
+
+    public bool ContainPlayer(int clientId)
+    {
+        return ConnectedPlayerData.ContainsKey(clientId);
+    }
+
+    public void UpdateConnectedPlayerData(PlayerData[] dataArr)
+    {
+        if (!NetworkManager.Singleton.IsHost)
+        {
+            ConnectedPlayerData.Clear();
+            foreach (var data in dataArr)
+            {
+                ConnectedPlayerData[data.ClientId] = data;
+            }
+        }
+
+        EventMgr.Instance.Trigger(NoneArgEventEnum.PlayerStateChangeEvent);
     }
 
     public List<PlayerData> GetAllPlayers()
@@ -83,5 +105,17 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
         });
 
         return result;
+    }
+
+    public void PlayerSetReady(int clientId, bool v)
+    {
+        if (ContainPlayer(clientId))
+        {
+            var data = ConnectedPlayerData[clientId];
+            data.IsReady = v;
+            ConnectedPlayerData[clientId] = data;
+
+            NgoMgr.Instance.UpdateLobbyPlayerDataClientRpc(ConnectedPlayerData.Values.ToArray());
+        }
     }
 }

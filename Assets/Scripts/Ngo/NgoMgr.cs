@@ -148,4 +148,16 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
         UIMgr.Instance.HideAllPanels();
         UIMgr.Instance.HideAllPopups();
     }
+
+    [ClientRpc]
+    public void UpdateLobbyPlayerDataClientRpc(PlayerData[] arr)
+    {
+        PlayerMgr.Instance.UpdateConnectedPlayerData(arr);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    public void ChangePlayerReadyStateServerRpc(int clientId, bool v)
+    {
+        PlayerMgr.Instance.PlayerSetReady(clientId, v);
+    }
 }
