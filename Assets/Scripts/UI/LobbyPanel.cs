@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using TMPro;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
@@ -9,6 +11,9 @@ public class LobbyPanel : MonoBehaviour
 {
     [SerializeField]
     private Button StartBtn;
+
+    [SerializeField]
+    private TextMeshProUGUI StartBtnText;
 
     [SerializeField]
     private Button QuitBtn;
@@ -30,12 +35,18 @@ public class LobbyPanel : MonoBehaviour
 
     private void Start()
     {
+        StartBtn.onClick.AddListener(OnStartBtnClicked);
         UpdateView();
     }
 
     private void OnDisable()
     {
-        EventMgr.Instance.UnSubscribe(NoneArgEventEnum.PlayerStateChangeEvent, OnPlayerStateChange);
+        EventMgr.Instance.Unsubscribe(NoneArgEventEnum.PlayerStateChangeEvent, OnPlayerStateChange);
+    }
+
+    private void OnStartBtnClicked()
+    {
+        NgoMgr.Instance.NgoLoadScene(SceneStatic.GameSceneName);
     }
 
     private void OnPlayerStateChange()
@@ -70,6 +81,29 @@ public class LobbyPanel : MonoBehaviour
 
             item.transform.SetParent(PlayerDataRoot, false);
             item.UpdateView(dataList[i]);
+        }
+
+        int totalPlayerNum = GameMgr.Instance.LobbyConfig.TotalPlayerNum;
+        if (dataList.Count > totalPlayerNum)
+        {
+            Debug.LogError($"玩家数量超过上限: {dataList.Count} > {totalPlayerNum}");
+            StartBtn.interactable = false;
+        }
+        else if(dataList.Count < totalPlayerNum)
+        {
+            StartBtn.interactable = false;
+            StartBtnText.text = $"等待玩家: {dataList.Count} / {totalPlayerNum}";
+            Debug.Log($"等待玩家加入: {dataList.Count} / {totalPlayerNum}");
+        }
+        else if(dataList.Any(p => !p.IsReady))
+        {
+            StartBtn.interactable = false;
+            StartBtnText.text = "等待玩家准备";
+        }
+        else
+        {
+            StartBtn.interactable = NetworkManager.Singleton.IsHost;
+            StartBtnText.text = "开始游戏";
         }
     }
 }

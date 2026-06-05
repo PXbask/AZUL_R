@@ -21,13 +21,33 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
         }
     }
 
+    public override void OnNetworkSpawn()
+    {
+        base.OnNetworkSpawn();
+
+        if (NetworkManager.Singleton.SceneManager != null)
+        {
+            NetworkManager.Singleton.SceneManager.OnLoadComplete += OnSceneLoadComplete;
+        }
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        base.OnNetworkDespawn();
+
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.SceneManager != null)
+        {
+            NetworkManager.Singleton.SceneManager.OnLoadComplete -= OnSceneLoadComplete;
+        }
+    }
+
     public override void OnDestroy()
     {
         base.OnDestroy();
         if (EventMgr.Instance != null)
         {
-            EventMgr.Instance.UnSubscribe<CreateLobbyEvent>(OnCreateLobby);
-            EventMgr.Instance.UnSubscribe<JoinLobbyEvent>(OnJoinLobby);
+            EventMgr.Instance.Unsubscribe<CreateLobbyEvent>(OnCreateLobby);
+            EventMgr.Instance.Unsubscribe<JoinLobbyEvent>(OnJoinLobby);
         }
 
         if (NetworkManager.Singleton != null)
@@ -139,20 +159,41 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
         EventMgr.Instance.Trigger(new PlayerDisconnectedEvent { ClientId = obj });
     }
 
+    /// <summary>
+    /// Host 和 Client 场景加载完成时均会回调
+    /// clientId: 完成加载的客户端 ID
+    /// sceneName: 场景名
+    /// loadSceneMode: 加载模式
+    /// </summary>
+    private void OnSceneLoadComplete(ulong clientId, string sceneName, UnityEngine.SceneManagement.LoadSceneMode loadSceneMode)
+    {
+        // 只处理本机自己完成加载的事件
+        if (clientId != NetworkManager.Singleton.LocalClientId) return;
+
+        Debug.Log($"[NgoMgr] 本机场景加载完成: {sceneName}");
+
+        // 隐藏所有 UI（Client 端同步处理）
+        UIMgr.Instance.HideAllPanels();
+        UIMgr.Instance.HideAllPopups();
+
+        // 广播场景加载完成事件，供各模块监听
+        EventMgr.Instance.Trigger(NoneArgEventEnum.SceneLoadedEvent);
+    }
+
     public void NgoLoadScene(string sceneName)
     {
         if (!NetworkManager.Singleton.IsHost) return;
 
         NetworkManager.Singleton.SceneManager.LoadScene(sceneName, UnityEngine.SceneManagement.LoadSceneMode.Single);
 
-        UIMgr.Instance.HideAllPanels();
-        UIMgr.Instance.HideAllPopups();
+        //UIMgr.Instance.HideAllPanels();
+        //UIMgr.Instance.HideAllPopups();
     }
 
     [ClientRpc]
-    public void UpdateLobbyPlayerDataClientRpc(PlayerData[] arr)
+    public void UpdateLobbyPlayerDataClientRpc(PlayerData[] arr, LobbyConfig lobbyConfig)
     {
-        PlayerMgr.Instance.UpdateConnectedPlayerData(arr);
+        PlayerMgr.Instance.UpdateConnectedPlayerData(arr, lobbyConfig);
     }
 
     [ServerRpc(RequireOwnership = false)]

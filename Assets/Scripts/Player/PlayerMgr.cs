@@ -19,8 +19,8 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
     {
         if (EventMgr.Instance != null)
         {
-            EventMgr.Instance.UnSubscribe<PlayerConnectedEvent>(OnClientConnected);
-            EventMgr.Instance.UnSubscribe<PlayerDisconnectedEvent>(OnClientDisconnected);
+            EventMgr.Instance.Unsubscribe<PlayerConnectedEvent>(OnClientConnected);
+            EventMgr.Instance.Unsubscribe<PlayerDisconnectedEvent>(OnClientDisconnected);
         }
     }
 
@@ -36,6 +36,11 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
 
     public void AddPlayer(int clientId)
     {
+        if (!NetworkManager.Singleton.IsHost)
+        {
+            Debug.LogError("Only host can add player.");
+            return;
+        }
         if (ConnectedPlayerData.ContainsKey(clientId))
         {
             Debug.LogError("Player with ClientId " + clientId + " already exists.");
@@ -45,16 +50,22 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
         {
             PlayerType = PlayerType.Human,
             ClientId = (int)clientId,
+            GameId = ConnectedPlayerData.Count,
             Name = string.Format("Human [{0}]", clientId),
             IsReady = false,
         };
         ConnectedPlayerData[clientId] = data;
 
-        NgoMgr.Instance.UpdateLobbyPlayerDataClientRpc(ConnectedPlayerData.Values.ToArray());
+        NgoMgr.Instance.UpdateLobbyPlayerDataClientRpc(ConnectedPlayerData.Values.ToArray(), GameMgr.Instance.LobbyConfig);
     }
 
     public void RemovePlayer(int clientId)
     {
+        if (!NetworkManager.Singleton.IsHost)
+        {
+            Debug.LogError("Only host can remove player.");
+            return;
+        }
         if (!ConnectedPlayerData.TryGetValue(clientId, out PlayerData value))
         {
             Debug.LogError($"PlayerDataDict does not contain clientId {clientId}");
@@ -63,7 +74,7 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
         {
             ConnectedPlayerData.Remove(clientId);
 
-            NgoMgr.Instance.UpdateLobbyPlayerDataClientRpc(ConnectedPlayerData.Values.ToArray());
+            NgoMgr.Instance.UpdateLobbyPlayerDataClientRpc(ConnectedPlayerData.Values.ToArray(), GameMgr.Instance.LobbyConfig);
         }
     }
 
@@ -72,7 +83,7 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
         return ConnectedPlayerData.ContainsKey(clientId);
     }
 
-    public void UpdateConnectedPlayerData(PlayerData[] dataArr)
+    public void UpdateConnectedPlayerData(PlayerData[] dataArr, LobbyConfig config)
     {
         if (!NetworkManager.Singleton.IsHost)
         {
@@ -81,6 +92,8 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
             {
                 ConnectedPlayerData[data.ClientId] = data;
             }
+
+            GameMgr.Instance.LobbyConfig = config;
         }
 
         EventMgr.Instance.Trigger(NoneArgEventEnum.PlayerStateChangeEvent);
@@ -115,7 +128,7 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
             data.IsReady = v;
             ConnectedPlayerData[clientId] = data;
 
-            NgoMgr.Instance.UpdateLobbyPlayerDataClientRpc(ConnectedPlayerData.Values.ToArray());
+            NgoMgr.Instance.UpdateLobbyPlayerDataClientRpc(ConnectedPlayerData.Values.ToArray(), GameMgr.Instance.LobbyConfig);
         }
     }
 }

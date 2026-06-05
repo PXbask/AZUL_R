@@ -36,7 +36,7 @@ public class EventMgr : MonoSingleton<EventMgr>
     }
 
     /// <summary>注销事件监听</summary>
-    public void UnSubscribe<T>(Action<T> handler) where T : EventBase
+    public void Unsubscribe<T>(Action<T> handler) where T : EventBase
     {
         Type type = typeof(T);
         if (_listeners.TryGetValue(type, out List<Delegate> list))
@@ -47,7 +47,7 @@ public class EventMgr : MonoSingleton<EventMgr>
         }
     }
 
-    public void UnSubscribe(NoneArgEventEnum evt, Action handler)
+    public void Unsubscribe(NoneArgEventEnum evt, Action handler)
     {
         if (_noneArgListeners.TryGetValue(evt, out List<Delegate> list))
         {

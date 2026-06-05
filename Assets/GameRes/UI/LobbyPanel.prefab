@@ -414,6 +414,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   StartBtn: {fileID: 4368371229387531312}
+  StartBtnText: {fileID: 7898741079974272474}
   QuitBtn: {fileID: 7320598005139855554}
   PlayerDataRoot: {fileID: 8652751878616699042}
 --- !u!1 &5165881699119817178
