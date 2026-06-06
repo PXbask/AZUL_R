@@ -78,14 +78,7 @@ public class EventMgr : MonoSingleton<EventMgr>
         Delegate[] snapshot = list.ToArray();
         foreach (Delegate d in snapshot)
         {
-            try
-            {
-                ((Action<T>)d)?.Invoke(evt);
-            }
-            catch (Exception e)
-            {
-                Debug.LogError($"[EventMgr] Exception in handler for {type.Name}: {e}");
-            }
+            ((Action<T>)d)?.Invoke(evt);
         }
     }
 

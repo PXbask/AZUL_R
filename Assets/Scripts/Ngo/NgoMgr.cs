@@ -177,7 +177,7 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
         UIMgr.Instance.HideAllPopups();
 
         // 广播场景加载完成事件，供各模块监听
-        EventMgr.Instance.Trigger(NoneArgEventEnum.SceneLoadedEvent);
+        EventMgr.Instance.Trigger(new NgoLoadSceneCompleteEvent { ClientId = clientId, SceneName = sceneName });
     }
 
     public void NgoLoadScene(string sceneName)

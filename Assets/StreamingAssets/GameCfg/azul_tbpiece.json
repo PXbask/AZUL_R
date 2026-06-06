@@ -1,0 +1,406 @@
+[
+  {
+    "Id": 0,
+    "PieceTokenType": 0
+  },
+  {
+    "Id": 1,
+    "PieceTokenType": 1
+  },
+  {
+    "Id": 2,
+    "PieceTokenType": 1
+  },
+  {
+    "Id": 3,
+    "PieceTokenType": 1
+  },
+  {
+    "Id": 4,
+    "PieceTokenType": 1
+  },
+  {
+    "Id": 5,
+    "PieceTokenType": 1
+  },
+  {
+    "Id": 6,
+    "PieceTokenType": 1
+  },
+  {
+    "Id": 7,
+    "PieceTokenType": 1
+  },
+  {
+    "Id": 8,
+    "PieceTokenType": 1
+  },
+  {
+    "Id": 9,
+    "PieceTokenType": 1
+  },
+  {
+    "Id": 10,
+    "PieceTokenType": 1
+  },
+  {
+    "Id": 11,
+    "PieceTokenType": 1
+  },
+  {
+    "Id": 12,
+    "PieceTokenType": 1
+  },
+  {
+    "Id": 13,
+    "PieceTokenType": 1
+  },
+  {
+    "Id": 14,
+    "PieceTokenType": 1
+  },
+  {
+    "Id": 15,
+    "PieceTokenType": 1
+  },
+  {
+    "Id": 16,
+    "PieceTokenType": 1
+  },
+  {
+    "Id": 17,
+    "PieceTokenType": 1
+  },
+  {
+    "Id": 18,
+    "PieceTokenType": 1
+  },
+  {
+    "Id": 19,
+    "PieceTokenType": 1
+  },
+  {
+    "Id": 20,
+    "PieceTokenType": 1
+  },
+  {
+    "Id": 21,
+    "PieceTokenType": 2
+  },
+  {
+    "Id": 22,
+    "PieceTokenType": 2
+  },
+  {
+    "Id": 23,
+    "PieceTokenType": 2
+  },
+  {
+    "Id": 24,
+    "PieceTokenType": 2
+  },
+  {
+    "Id": 25,
+    "PieceTokenType": 2
+  },
+  {
+    "Id": 26,
+    "PieceTokenType": 2
+  },
+  {
+    "Id": 27,
+    "PieceTokenType": 2
+  },
+  {
+    "Id": 28,
+    "PieceTokenType": 2
+  },
+  {
+    "Id": 29,
+    "PieceTokenType": 2
+  },
+  {
+    "Id": 30,
+    "PieceTokenType": 2
+  },
+  {
+    "Id": 31,
+    "PieceTokenType": 2
+  },
+  {
+    "Id": 32,
+    "PieceTokenType": 2
+  },
+  {
+    "Id": 33,
+    "PieceTokenType": 2
+  },
+  {
+    "Id": 34,
+    "PieceTokenType": 2
+  },
+  {
+    "Id": 35,
+    "PieceTokenType": 2
+  },
+  {
+    "Id": 36,
+    "PieceTokenType": 2
+  },
+  {
+    "Id": 37,
+    "PieceTokenType": 2
+  },
+  {
+    "Id": 38,
+    "PieceTokenType": 2
+  },
+  {
+    "Id": 39,
+    "PieceTokenType": 2
+  },
+  {
+    "Id": 40,
+    "PieceTokenType": 2
+  },
+  {
+    "Id": 41,
+    "PieceTokenType": 3
+  },
+  {
+    "Id": 42,
+    "PieceTokenType": 3
+  },
+  {
+    "Id": 43,
+    "PieceTokenType": 3
+  },
+  {
+    "Id": 44,
+    "PieceTokenType": 3
+  },
+  {
+    "Id": 45,
+    "PieceTokenType": 3
+  },
+  {
+    "Id": 46,
+    "PieceTokenType": 3
+  },
+  {
+    "Id": 47,
+    "PieceTokenType": 3
+  },
+  {
+    "Id": 48,
+    "PieceTokenType": 3
+  },
+  {
+    "Id": 49,
+    "PieceTokenType": 3
+  },
+  {
+    "Id": 50,
+    "PieceTokenType": 3
+  },
+  {
+    "Id": 51,
+    "PieceTokenType": 3
+  },
+  {
+    "Id": 52,
+    "PieceTokenType": 3
+  },
+  {
+    "Id": 53,
+    "PieceTokenType": 3
+  },
+  {
+    "Id": 54,
+    "PieceTokenType": 3
+  },
+  {
+    "Id": 55,
+    "PieceTokenType": 3
+  },
+  {
+    "Id": 56,
+    "PieceTokenType": 3
+  },
+  {
+    "Id": 57,
+    "PieceTokenType": 3
+  },
+  {
+    "Id": 58,
+    "PieceTokenType": 3
+  },
+  {
+    "Id": 59,
+    "PieceTokenType": 3
+  },
+  {
+    "Id": 60,
+    "PieceTokenType": 3
+  },
+  {
+    "Id": 61,
+    "PieceTokenType": 4
+  },
+  {
+    "Id": 62,
+    "PieceTokenType": 4
+  },
+  {
+    "Id": 63,
+    "PieceTokenType": 4
+  },
+  {
+    "Id": 64,
+    "PieceTokenType": 4
+  },
+  {
+    "Id": 65,
+    "PieceTokenType": 4
+  },
+  {
+    "Id": 66,
+    "PieceTokenType": 4
+  },
+  {
+    "Id": 67,
+    "PieceTokenType": 4
+  },
+  {
+    "Id": 68,
+    "PieceTokenType": 4
+  },
+  {
+    "Id": 69,
+    "PieceTokenType": 4
+  },
+  {
+    "Id": 70,
+    "PieceTokenType": 4
+  },
+  {
+    "Id": 71,
+    "PieceTokenType": 4
+  },
+  {
+    "Id": 72,
+    "PieceTokenType": 4
+  },
+  {
+    "Id": 73,
+    "PieceTokenType": 4
+  },
+  {
+    "Id": 74,
+    "PieceTokenType": 4
+  },
+  {
+    "Id": 75,
+    "PieceTokenType": 4
+  },
+  {
+    "Id": 76,
+    "PieceTokenType": 4
+  },
+  {
+    "Id": 77,
+    "PieceTokenType": 4
+  },
+  {
+    "Id": 78,
+    "PieceTokenType": 4
+  },
+  {
+    "Id": 79,
+    "PieceTokenType": 4
+  },
+  {
+    "Id": 80,
+    "PieceTokenType": 4
+  },
+  {
+    "Id": 81,
+    "PieceTokenType": 5
+  },
+  {
+    "Id": 82,
+    "PieceTokenType": 5
+  },
+  {
+    "Id": 83,
+    "PieceTokenType": 5
+  },
+  {
+    "Id": 84,
+    "PieceTokenType": 5
+  },
+  {
+    "Id": 85,
+    "PieceTokenType": 5
+  },
+  {
+    "Id": 86,
+    "PieceTokenType": 5
+  },
+  {
+    "Id": 87,
+    "PieceTokenType": 5
+  },
+  {
+    "Id": 88,
+    "PieceTokenType": 5
+  },
+  {
+    "Id": 89,
+    "PieceTokenType": 5
+  },
+  {
+    "Id": 90,
+    "PieceTokenType": 5
+  },
+  {
+    "Id": 91,
+    "PieceTokenType": 5
+  },
+  {
+    "Id": 92,
+    "PieceTokenType": 5
+  },
+  {
+    "Id": 93,
+    "PieceTokenType": 5
+  },
+  {
+    "Id": 94,
+    "PieceTokenType": 5
+  },
+  {
+    "Id": 95,
+    "PieceTokenType": 5
+  },
+  {
+    "Id": 96,
+    "PieceTokenType": 5
+  },
+  {
+    "Id": 97,
+    "PieceTokenType": 5
+  },
+  {
+    "Id": 98,
+    "PieceTokenType": 5
+  },
+  {
+    "Id": 99,
+    "PieceTokenType": 5
+  },
+  {
+    "Id": 100,
+    "PieceTokenType": 5
+  }
+]

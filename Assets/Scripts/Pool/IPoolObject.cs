@@ -1,4 +1,4 @@
-/// <summary>
+﻿/// <summary>
 /// 受对象池管理的物体接口
 /// </summary>
 public interface IPoolObject
