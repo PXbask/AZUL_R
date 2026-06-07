@@ -19,6 +19,8 @@ public class JoinPanel : UIPanel
     [SerializeField]
     private Button QuitBtn;
 
+    public override string PoolKey => nameof(JoinPanel);
+
     public override void OnInit()
     {
         base.OnInit();

@@ -37,6 +37,8 @@ public class CreatePanel : UIPanel
     [SerializeField]
     private Button QuitBtn;
 
+    public override string PoolKey => nameof(CreatePanel);
+
     public override void OnInit()
     {
         base.OnInit();

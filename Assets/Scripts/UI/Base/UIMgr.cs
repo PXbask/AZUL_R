@@ -217,7 +217,6 @@ public class UIMgr : MonoSingleton<UIMgr>
     {
         HideAllPopups();
         HideAllPanels();
-        PoolMgr.Instance.DisposeAll();
         _initializedKeys.Clear();
     }
 

@@ -7,7 +7,6 @@ using UnityEngine.UI;
 
 public class PlayerDataItem : MonoBehaviour, IPoolObject
 {
-    public const string PoolKey = "PlayerDataItem";
 
     [SerializeField]
     private TMPro.TextMeshProUGUI NameText;
@@ -15,7 +14,7 @@ public class PlayerDataItem : MonoBehaviour, IPoolObject
     [SerializeField]
     private Toggle ReadyToggle;
 
-    string IPoolObject.PoolKey { get; set; } = PoolKey;
+    string IPoolObject.PoolKey => nameof(PlayerDataItem);
 
     private void Start()
     {

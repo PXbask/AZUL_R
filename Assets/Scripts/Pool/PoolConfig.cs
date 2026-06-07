@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -7,9 +7,6 @@ using UnityEngine;
 [System.Serializable]
 public class PoolConfigEntry
 {
-    [Tooltip("对象池 Key，用于 Spawn/Recycle 时索引")]
-    public string keyName;
-
     [Tooltip("对应的预制体")]
     public GameObject prefab;
 

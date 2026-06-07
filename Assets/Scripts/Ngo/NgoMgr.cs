@@ -2,9 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Net;
-using System.Runtime.CompilerServices;
 using Unity.Netcode;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 public class NgoMgr : NetcodeSingleton<NgoMgr>
@@ -24,6 +22,9 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
+
+        //注册NetworkPrefabInstanceHandler
+        RegisterPrefabHandler();
 
         if (NetworkManager.Singleton.SceneManager != null)
         {
@@ -57,6 +58,74 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
         }
     }
 
+    private void RegisterPrefabHandler()
+    {
+        var lst = PoolMgr.Instance.NetworkObjectPrefabList;
+        foreach (var prefab in lst)
+        {
+            // 获取实现了 IPoolObject 的组件
+            IPoolObject poolObj = prefab.GetComponent<IPoolObject>();
+            if (poolObj == null)
+            {
+                Debug.LogWarning($"[NgoMgr] {prefab.name} 没有实现 IPoolObject，跳过注册");
+                continue;
+            }
+
+            string poolKey = poolObj.PoolKey;
+            if (string.IsNullOrEmpty(poolKey))
+            {
+                Debug.LogWarning($"[NgoMgr] {prefab.name} 的 PoolKey 为空，跳过注册");
+                continue;
+            }
+
+            // 获取运行时具体类型（如 PlayerBoard）
+            Type concreteType = poolObj.GetType();
+
+            // 动态创建 PoolObjectSpawner<T>，T = concreteType
+            Type spawnerType = typeof(PoolObjectSpawner<>).MakeGenericType(concreteType);
+            INetworkPrefabInstanceHandler handler =
+                (INetworkPrefabInstanceHandler)Activator.CreateInstance(spawnerType, poolKey);
+
+            // 注册到 NGO
+            NetworkManager.Singleton.PrefabHandler.AddHandler(prefab, handler);
+            //_registeredHandlers[prefab] = handler;
+
+            Debug.Log($"[NgoMgr] 注册 PrefabHandler: {prefab.name} → PoolObjectSpawner<{concreteType.Name}> Key={poolKey}");
+        }
+    }
+
+    /// <summary>
+    /// Host 端从对象池取出对象并通过 NGO Spawn（Client 端会自动走 PoolObjectSpawner）
+    /// </summary>
+    public NetworkObject SpawnFromPool<T>(ulong ownerClientId, Vector3 position, Quaternion rotation, bool destroyWithScene = true, Action<T> beforeSpawn = null)
+        where T : MonoBehaviour, IPoolObject
+    {
+        if (!NetworkManager.Singleton.IsHost)
+        {
+            Debug.LogError("[NgoMgr] SpawnFromPool 只能在 Host 端调用");
+            return null;
+        }
+
+        // 获取 PoolKey（通过 T 的实例属性）
+        string poolKey = typeof(T).Name;
+
+        // Host 端从对象池取出
+        T obj = PoolMgr.Instance.Spawn<T>(poolKey);
+        if (obj == null)
+        {
+            Debug.LogError($"[NgoMgr] 对象池 Spawn 失败，Key={poolKey}");
+            return null;
+        }
+
+        obj.transform.SetPositionAndRotation(position, rotation);
+        beforeSpawn?.Invoke(obj);
+
+        NetworkObject netObj = obj.GetComponent<NetworkObject>();
+        netObj.SpawnWithOwnership(ownerClientId, destroyWithScene);
+
+        return netObj;
+    }
+
     private void OnCreateLobby(CreateLobbyEvent e)
     {
         var ut = NetworkManager.Singleton.NetworkConfig.NetworkTransport as Unity.Netcode.Transports.UTP.UnityTransport;
@@ -70,6 +139,14 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
             Debug.LogError("UnityTransport is not being used as the network transport.");
         }
 
+        GameMgr.Instance.LobbyConfig = new LobbyConfig
+        {
+            TotalPlayerNum = e.TotalPlayerNum,
+            PlayerNum = e.PlayerNum,
+            AiNum = e.AiNum,
+            AiPort = e.AiPort,
+            PlayerPort = e.PlayerPort
+        };
         NetworkManager.Singleton.StartHost();
         NgoLoadScene(SceneStatic.LobbySceneName);
     }
@@ -167,17 +244,17 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
     /// </summary>
     private void OnSceneLoadComplete(ulong clientId, string sceneName, UnityEngine.SceneManagement.LoadSceneMode loadSceneMode)
     {
-        // 只处理本机自己完成加载的事件
-        if (clientId != NetworkManager.Singleton.LocalClientId) return;
+        if(clientId == NetworkManager.Singleton.LocalClientId)
+        {
+            Debug.Log($"[NgoMgr] 本机场景加载完成: {sceneName}");
 
-        Debug.Log($"[NgoMgr] 本机场景加载完成: {sceneName}");
-
-        // 隐藏所有 UI（Client 端同步处理）
-        UIMgr.Instance.HideAllPanels();
-        UIMgr.Instance.HideAllPopups();
+            // 隐藏所有 UI（Client 端同步处理）
+            UIMgr.Instance.HideAllPanels();
+            UIMgr.Instance.HideAllPopups();
+        }
 
         // 广播场景加载完成事件，供各模块监听
-        EventMgr.Instance.Trigger(new NgoLoadSceneCompleteEvent { ClientId = clientId, SceneName = sceneName });
+        EventMgr.Instance.Trigger(new NgoLoadSceneCompleteEvent { ClientId = (int)clientId, SceneName = sceneName });
     }
 
     public void NgoLoadScene(string sceneName)

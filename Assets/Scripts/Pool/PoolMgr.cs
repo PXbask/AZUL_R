@@ -1,4 +1,5 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
@@ -19,6 +20,8 @@ public class PoolMgr : MonoSingleton<PoolMgr>
     // 各池最大缓存数量
     private readonly Dictionary<string, int> _maxSizes = new Dictionary<string, int>();
 
+    public readonly List<GameObject> NetworkObjectPrefabList = new List<GameObject>();
+
     [Tooltip("池配置文件，自动注册所有预制体信息")]
     [SerializeField] private PoolConfig _config;
 
@@ -36,10 +39,26 @@ public class PoolMgr : MonoSingleton<PoolMgr>
     private void InitFromConfig()
     {
         if (_config == null) return;
+
+        NetworkObjectPrefabList.Clear();
         foreach (PoolConfigEntry entry in _config.entries)
         {
-            if (entry == null || string.IsNullOrEmpty(entry.keyName) || entry.prefab == null) continue;
-            Register(entry.keyName, entry.prefab, entry.maxSize);
+            if (entry == null || entry.prefab == null) continue;
+
+            IPoolObject com = entry.prefab.GetComponent<IPoolObject>();
+            if(com != null && !string.IsNullOrEmpty(com.PoolKey))
+            {
+                Register(com.PoolKey, entry.prefab, entry.maxSize);
+
+                //将网络预制体存入，等待NgoMgr处理
+                if(entry.prefab.GetComponent<NetworkObject>() != null)
+                {
+                    if (!NetworkObjectPrefabList.Contains(entry.prefab))
+                    {
+                        NetworkObjectPrefabList.Add(entry.prefab);
+                    }
+                }
+            }
         }
     }
 
@@ -69,8 +88,6 @@ public class PoolMgr : MonoSingleton<PoolMgr>
         {
             GameObject go = Instantiate(prefab, _poolRoot);
             IPoolObject obj = go.GetComponent<IPoolObject>();
-            if (obj != null)
-                obj.PoolKey = key;
             go.SetActive(false);
             queue.Enqueue(go);
         }
@@ -97,6 +114,12 @@ public class PoolMgr : MonoSingleton<PoolMgr>
         return obj as T;
     }
 
+    public T Spawn<T>(Transform parent = null) where T : MonoBehaviour, IPoolObject
+    {
+        string key = typeof(T).Name;
+        return Spawn<T>(key, parent);
+    }
+
     /// <summary>从池中取出或新建对象（非泛型）</summary>
     public IPoolObject Spawn(string key, Transform parent = null)
     {
@@ -108,7 +131,7 @@ public class PoolMgr : MonoSingleton<PoolMgr>
     }
 
     /// <summary>归还对象到池</summary>
-    public void Recycle(IPoolObject obj)
+    public void Recycle(IPoolObject obj, bool isNetobj = false)
     {
         if (obj == null) return;
         MonoBehaviour mb = obj as MonoBehaviour;
@@ -127,8 +150,8 @@ public class PoolMgr : MonoSingleton<PoolMgr>
         }
 
         obj.OnRecycle();
+        mb.transform.SetParent(isNetobj ? null : _poolRoot);
         mb.gameObject.SetActive(false);
-        mb.transform.SetParent(_poolRoot);
         _pools[key].Enqueue(mb.gameObject);
     }
 
@@ -142,7 +165,10 @@ public class PoolMgr : MonoSingleton<PoolMgr>
         if (!_pools.TryGetValue(key, out Queue<GameObject> queue)) return;
         foreach (var go in queue)
         {
-            go.GetComponent<IPoolObject>()?.OnDispose();
+            if (go)
+            {
+                go.GetComponent<IPoolObject>()?.OnDispose();
+            }
             Destroy(go);
         }
         queue.Clear();
@@ -164,6 +190,19 @@ public class PoolMgr : MonoSingleton<PoolMgr>
     public int CountInPool(string key)
     {
         return _pools.TryGetValue(key, out Queue<GameObject> q) ? q.Count : 0;
+    }
+
+    public GameObject GetPrefabByKey(string key)
+    {
+        if(_registry.TryGetValue(key, out var res))
+        {
+            return res;
+        }
+        else
+        {
+            Debug.LogError($"can not find key:{key} in poolmgr registry");
+            return null;
+        }
     }
 
     #endregion
@@ -195,8 +234,6 @@ public class PoolMgr : MonoSingleton<PoolMgr>
             Destroy(go);
             return null;
         }
-
-        obj.PoolKey = key;
         return obj;
     }
 

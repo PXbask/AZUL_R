@@ -8,7 +8,7 @@ namespace AZUL
 {
     public class PlayerBoard : MonoBehaviour, IPoolObject
     {
-        public string PoolKey { get; set; }
+        public string PoolKey => nameof(PlayerBoard);
 
         public void OnDispose()
         {

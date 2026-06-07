@@ -1,9 +1,11 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using Unity.Netcode;
 using UnityEngine;
 
-public class PlayerController : NetworkBehaviour
+public class PlayerController : NetworkBehaviour, IPoolObject
 {
     [SerializeField]
     private Camera Camera;
@@ -14,32 +16,67 @@ public class PlayerController : NetworkBehaviour
     [SerializeField]
     private Canvas NameCanvas;
 
+    [SerializeField]
+    private TextMeshProUGUI NameText;
+
+    public NetworkVariable<PlayerData> PlayerData = new NetworkVariable<PlayerData>(default);
+
     /// <summary>所有已生成的玩家控制器，key = ClientId</summary>
-    public static readonly Dictionary<ulong, PlayerController> All = new Dictionary<ulong, PlayerController>();
+    public static readonly Dictionary<ulong, PlayerController> AllHuman = new Dictionary<ulong, PlayerController>();
+    public static readonly Dictionary<int, PlayerController> All = new Dictionary<int, PlayerController>();
 
     public override void OnNetworkSpawn()
     {
-        All[OwnerClientId] = this;
-
-        Camera.enabled = IsOwner;
-        CameraMovement.enabled = IsOwner;
+        base.OnNetworkSpawn();
+        PlayerData.OnValueChanged += OnPlayerDataChanged;
     }
 
     public override void OnNetworkDespawn()
     {
-        All.Remove(OwnerClientId);
+        base.OnNetworkDespawn();
+        if (PlayerData.Value.PlayerType == PlayerType.Human &&
+            AllHuman.ContainsKey(OwnerClientId))
+            AllHuman.Remove(OwnerClientId);
+    }
+
+    private void OnPlayerDataChanged(PlayerData previousValue, PlayerData newValue)
+    {
+        if (newValue.PlayerType == previousValue.PlayerType) return;
+
+        All[newValue.GameId] = this;
+        bool isHuman = newValue.PlayerType == PlayerType.Human;
+        if (isHuman)
+        {
+            AllHuman[OwnerClientId] = this;
+        }
+        Camera.enabled = IsOwner && isHuman;
+        CameraMovement.enabled = IsOwner && isHuman;
+
+        UpdateName();
+    }
+
+    private void UpdateName()
+    {
+        NameText.text = PlayerData.Value.Name.ToString();
     }
 
     /// <summary>获取本机自己的 PlayerController</summary>
     public static PlayerController Local =>
         NetworkManager.Singleton != null &&
-        All.TryGetValue(NetworkManager.Singleton.LocalClientId, out var pc) ? pc : null;
+        AllHuman.TryGetValue(NetworkManager.Singleton.LocalClientId, out var pc) ? pc : null;
+
+    public string PoolKey => nameof(PlayerController);
+
+    public static PlayerController Get(ulong clientId) =>
+        AllHuman.TryGetValue(clientId, out var pc) ? pc : null;
 
     private void LateUpdate()
     {
         if (IsOwner) return;
 
         var LocalPlayerObj = Local;
+        if (LocalPlayerObj == null) return;
+
         foreach (var item in All.Values)
         {
             item.NameFaceTo(LocalPlayerObj.transform);
@@ -58,5 +95,21 @@ public class PlayerController : NetworkBehaviour
         if (direction.sqrMagnitude < 0.0001f) return;
 
         NameCanvas.transform.rotation = Quaternion.LookRotation(-direction);
+    }
+
+    public void OnSpawn()
+    {
+    }
+
+    public void OnRecycle()
+    {
+    }
+
+    public void OnDispose()
+    {
+    }
+
+    public void Recycle()
+    {
     }
 }

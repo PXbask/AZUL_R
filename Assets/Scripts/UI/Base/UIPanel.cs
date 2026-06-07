@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public abstract class UIPanel : MonoBehaviour, IPoolObject, IUIPanel
 {
@@ -6,7 +6,7 @@ public abstract class UIPanel : MonoBehaviour, IPoolObject, IUIPanel
     public bool IsPopup { get; internal set; }
 
     // IPoolObject
-    public string PoolKey { get; set; }
+    public virtual string PoolKey => nameof(UIPanel);
     public virtual void OnSpawn() { }
     public virtual void OnRecycle() { }
     public virtual void OnDispose() => OnRelease();

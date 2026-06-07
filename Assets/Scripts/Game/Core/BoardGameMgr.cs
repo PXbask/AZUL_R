@@ -38,32 +38,78 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
     {
         if(e.SceneName == SceneStatic.GameSceneName)
         {
-            if(e.ClientId == NetworkManager.Singleton.LocalClient.ClientId)
+            if(e.ClientId == (int)NetworkManager.Singleton.LocalClient.ClientId)
             {
                 //BoardGameController初始化
                 EnterGameScene();
-                //重新设定玩家位置
-                PlayerController localPlayer = PlayerController.Local;
-                if (localPlayer == null)
-                {
-                    Debug.LogError("[BoardGameMgr] 本机 PlayerController 未找到");
-                    return;
-                }
-                var trans = GetSeatTransByGameId((int)e.ClientId);
-                localPlayer.transform.position = trans.position;
-                localPlayer.transform.rotation = trans.rotation;
             }
 
-            //动态生成棋盘
             if (NetworkManager.Singleton.IsHost)
             {
-                PlayerBoard go = PoolMgr.Instance.Spawn<PlayerBoard>("Board");
-                NetworkObject netObj = go.GetComponent<NetworkObject>();
-                netObj.SpawnWithOwnership(e.ClientId);
-                var trans = GetBoardTransByGameId((int)e.ClientId);
-                netObj.transform.position = trans.position;
-                netObj.transform.rotation = trans.rotation;
+                HostAddNewPlayer((int)e.ClientId);
+
+                if(e.ClientId == (int)NetworkManager.Singleton.LocalClientId)
+                {
+                    //模拟Ai玩家入场
+                    var players = PlayerMgr.Instance.GetAllPlayers();
+                    foreach (var player in players)
+                    {
+                        if(player.PlayerType == PlayerType.AI)
+                        {
+                            EventMgr.Instance.Trigger(new NgoLoadSceneCompleteEvent
+                            {
+                                ClientId = player.ClientId,
+                                SceneName = e.SceneName,
+                            });
+                        }
+                    }
+                }
             }
+        }
+    }
+
+    public void HostAddNewPlayer(int clientId)
+    {
+        if(clientId >= 0)
+        {
+            //动态生成人类玩家棋盘
+            int gameId = PlayerMgr.Instance.GetGameIdByClientId(clientId);
+            var boardTrans = GetBoardTransByGameId(gameId);
+            NgoMgr.Instance.SpawnFromPool<PlayerBoard>(
+               (ulong)clientId,
+                boardTrans.position,
+                boardTrans.rotation
+            );
+
+            //动态生成人类玩家网络预制体
+            var seatTrans = GetSeatTransByGameId(gameId);
+            var obj = NgoMgr.Instance.SpawnFromPool<PlayerController>(
+                (ulong)clientId,
+                seatTrans.position,
+                seatTrans.rotation);
+            var pc = obj.GetComponent<PlayerController>();
+            pc.PlayerData.Value = PlayerMgr.Instance.GetPlayerDataByGameId(gameId);
+        }
+        else
+        {
+            ulong localClientId = NetworkManager.Singleton.LocalClientId;
+            //动态生成Ai玩家棋盘
+            int gameId = PlayerMgr.Instance.GetGameIdByClientId(clientId);
+            var boardTrans = GetBoardTransByGameId(gameId);
+            NgoMgr.Instance.SpawnFromPool<PlayerBoard>(
+               localClientId,
+                boardTrans.position,
+                boardTrans.rotation
+            );
+
+            //生成Ai玩家网络预制体
+            var seatTrans = GetSeatTransByGameId(gameId);
+            var aiObj =NgoMgr.Instance.SpawnFromPool<PlayerController>(
+                localClientId,
+                seatTrans.position,
+                seatTrans.rotation);
+            var pc = aiObj.GetComponent<PlayerController>();
+            pc.PlayerData.Value = PlayerMgr.Instance.GetPlayerDataByGameId(gameId);
         }
     }
 

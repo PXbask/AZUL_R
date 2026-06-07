@@ -10,9 +10,13 @@ public class BoardGameController : MonoBehaviour
     [SerializeField]
     private Dictionary<int, GameTable> GameTableDic = new Dictionary<int, GameTable>();
 
+    private Dictionary<int, BoardGamePlayer> BoardGamePlayerDic = new();
+
     public void Init()
     {
         GameTableDic.Clear();
+        BoardGamePlayerDic.Clear();
+
         foreach (var item in GameTables)
         {
             GameTableDic.Add(item.GameId, item);

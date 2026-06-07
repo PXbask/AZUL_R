@@ -13,15 +13,13 @@ MonoBehaviour:
   m_Name: PoolConfig
   m_EditorClassIdentifier: 
   entries:
-  - keyName: CreatePanel
-    prefab: {fileID: 9091658443000090819, guid: 6ef803d0a89d3894abb9cb198db537a2, type: 3}
+  - prefab: {fileID: 9091658443000090819, guid: 6ef803d0a89d3894abb9cb198db537a2, type: 3}
     maxSize: 1
-  - keyName: JoinPanel
-    prefab: {fileID: 7526805208437359555, guid: ad5b79e110f9fc741abf71ef4a8677eb, type: 3}
+  - prefab: {fileID: 7526805208437359555, guid: ad5b79e110f9fc741abf71ef4a8677eb, type: 3}
     maxSize: 1
-  - keyName: PlayerDataItem
-    prefab: {fileID: 2721219336023826585, guid: da0777797f7b55740b53b1bb74c7aff6, type: 3}
+  - prefab: {fileID: 2721219336023826585, guid: da0777797f7b55740b53b1bb74c7aff6, type: 3}
     maxSize: 6
-  - keyName: Board
-    prefab: {fileID: 5353695186800174581, guid: befbcd9bcb4fdbd44a2373245bac99aa, type: 3}
+  - prefab: {fileID: 2467254679056225505, guid: 5fd5123d6167d0c43a3682fb71492c9f, type: 3}
+    maxSize: 4
+  - prefab: {fileID: 7727652169414026981, guid: fd0f171b1adae4343a70ffbccd494c4e, type: 3}
     maxSize: 4

@@ -46,6 +46,7 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
             Debug.LogError("Player with ClientId " + clientId + " already exists.");
             return;
         }
+
         PlayerData data = new PlayerData()
         {
             PlayerType = PlayerType.Human,
@@ -55,6 +56,24 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
             IsReady = false,
         };
         ConnectedPlayerData[clientId] = data;
+
+        if (clientId == (int)NetworkManager.Singleton.LocalClientId)
+        {
+            //生成Ai玩家
+            for (int i = 0; i < GameMgr.Instance.LobbyConfig.AiNum; i++)
+            {
+                int fakeClientId = -i - 1;
+                PlayerData tdata = new PlayerData()
+                {
+                    PlayerType = PlayerType.AI,
+                    ClientId = fakeClientId,
+                    GameId = ConnectedPlayerData.Count,
+                    Name = string.Format("Ai [{0}]", fakeClientId),
+                    IsReady = true,
+                };
+                ConnectedPlayerData[fakeClientId] = tdata;
+            }
+        }
 
         NgoMgr.Instance.UpdateLobbyPlayerDataClientRpc(ConnectedPlayerData.Values.ToArray(), GameMgr.Instance.LobbyConfig);
     }
@@ -73,6 +92,16 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
         else
         {
             ConnectedPlayerData.Remove(clientId);
+
+            if (clientId == (int)NetworkManager.Singleton.LocalClientId)
+            {
+                //移除Ai玩家
+                for (int i = 0; i < GameMgr.Instance.LobbyConfig.AiNum; i++)
+                {
+                    int fakeClientId = -i - 1;
+                    ConnectedPlayerData.Remove(fakeClientId);
+                }
+            }
 
             NgoMgr.Instance.UpdateLobbyPlayerDataClientRpc(ConnectedPlayerData.Values.ToArray(), GameMgr.Instance.LobbyConfig);
         }
@@ -130,5 +159,31 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
 
             NgoMgr.Instance.UpdateLobbyPlayerDataClientRpc(ConnectedPlayerData.Values.ToArray(), GameMgr.Instance.LobbyConfig);
         }
+    }
+
+    public int GetGameIdByClientId(int clientId)
+    {
+        if (ContainPlayer(clientId))
+        {
+            return ConnectedPlayerData[clientId].GameId;
+        }
+        else
+        {
+            Debug.LogError($"GetGameIdByClientId error, clientId: {clientId}");
+            return -1;
+        }
+    }
+
+    public PlayerData GetPlayerDataByGameId(int gameId)
+    {
+        foreach (var data in ConnectedPlayerData.Values)
+        {
+            if (data.GameId == gameId)
+            {
+                return data;
+            }
+        }
+        Debug.LogError($"GetPlayerDataByGameId error, gameId: {gameId}");
+        return default;
     }
 }

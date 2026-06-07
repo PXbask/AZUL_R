@@ -335,7 +335,7 @@ GameObject:
   - component: {fileID: 2258610139867533671}
   - component: {fileID: -1170879996723453541}
   m_Layer: 0
-  m_Name: PlayerObj
+  m_Name: PlayerController
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -439,7 +439,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 500901525
+  GlobalObjectIdHash: 2982817728
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -463,6 +463,7 @@ MonoBehaviour:
   Camera: {fileID: 8523324278792026727}
   CameraMovement: {fileID: 2700630736878471023}
   NameCanvas: {fileID: 5983856398780214133}
+  NameText: {fileID: 3846171068570356958}
 --- !u!114 &-1170879996723453541
 MonoBehaviour:
   m_ObjectHideFlags: 0

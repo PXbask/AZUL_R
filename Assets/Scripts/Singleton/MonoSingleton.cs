@@ -1,25 +1,38 @@
-using UnityEngine;
+﻿using UnityEngine;
+using static Unity.Collections.AllocatorManager;
 
 public class MonoSingleton<T> : MonoBehaviour where T : MonoBehaviour
 {
     private static T _instance;
+    private static object _lock = new object();
+    private static bool _isQuitting = false;
 
     public static T Instance
     {
         get
         {
-            if (_instance == null)
+            if (_isQuitting)
             {
-                _instance = FindObjectOfType<T>();
+                //Debug.LogWarning($"[MonoSingleton] Instance of {typeof(T)} is already destroyed. Returning null.");
+                return null;
+            }
 
+            lock (_lock)
+            {
                 if (_instance == null)
                 {
-                    GameObject obj = new GameObject(typeof(T).Name);
-                    _instance = obj.AddComponent<T>();
-                    DontDestroyOnLoad(obj);
+                    _instance = FindObjectOfType<T>();
+
+                    if (_instance == null)
+                    {
+                        GameObject singletonObject = new GameObject();
+                        _instance = singletonObject.AddComponent<T>();
+                        singletonObject.name = typeof(T).ToString() + " (Singleton)";
+                        DontDestroyOnLoad(singletonObject);
+                    }
                 }
+                return _instance;
             }
-            return _instance;
         }
     }
 
@@ -36,9 +49,17 @@ public class MonoSingleton<T> : MonoBehaviour where T : MonoBehaviour
         }
     }
 
+    protected virtual void OnApplicationQuit()
+    {
+        _isQuitting = true;
+    }
+
     protected virtual void OnDestroy()
     {
         if (_instance == this)
+        {
+            _isQuitting = true;
             _instance = null;
+        }
     }
 }

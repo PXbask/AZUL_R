@@ -4,6 +4,6 @@ using UnityEngine;
 
 public class NgoLoadSceneCompleteEvent : EventBase
 {
-    public ulong ClientId;
+    public int ClientId;
     public string SceneName;
 }

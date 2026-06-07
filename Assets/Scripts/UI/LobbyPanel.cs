@@ -41,7 +41,10 @@ public class LobbyPanel : MonoBehaviour
 
     private void OnDisable()
     {
-        EventMgr.Instance.Unsubscribe(NoneArgEventEnum.PlayerStateChangeEvent, OnPlayerStateChange);
+        if(EventMgr.Instance != null)
+        {
+            EventMgr.Instance.Unsubscribe(NoneArgEventEnum.PlayerStateChangeEvent, OnPlayerStateChange);
+        }
     }
 
     private void OnStartBtnClicked()
@@ -75,7 +78,7 @@ public class LobbyPanel : MonoBehaviour
             }
             else
             {
-                item = PoolMgr.Instance.Spawn<PlayerDataItem>(PlayerDataItem.PoolKey, PlayerDataRoot);
+                item = PoolMgr.Instance.Spawn<PlayerDataItem>(PlayerDataRoot);
                 ActiveItems.Add(item);
             }
 

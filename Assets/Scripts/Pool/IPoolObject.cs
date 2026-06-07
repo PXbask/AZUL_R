@@ -4,7 +4,7 @@
 public interface IPoolObject
 {
     /// <summary>注册到对象池时使用的键名</summary>
-    string PoolKey { get; set; }
+    string PoolKey { get; }
 
     /// <summary>从池中取出、激活时调用</summary>
     void OnSpawn();
