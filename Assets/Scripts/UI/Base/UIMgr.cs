@@ -89,6 +89,39 @@ public class UIMgr : MonoSingleton<UIMgr>
 
     #endregion
 
+    /// <summary>
+    /// 关闭指定面板，从主面板栈或弹窗栈中移除
+    /// </summary>
+    public void HidePanel(UIPanel panel)
+    {
+        if (panel == null) return;
+
+        // 先在主面板栈中查找
+        LinkedListNode<UIPanel> node = _panelStack.Find(panel);
+        if (node != null)
+        {
+            bool wasTop = node == _panelStack.Last;
+            _panelStack.Remove(node);
+            HideTopInternal(panel, temporary: false);
+
+            // 若关闭的是栈顶，则重新显示新栈顶
+            if (wasTop && _panelStack.Last != null)
+                ShowInternal(_panelStack.Last.Value, null);
+
+            RefreshSiblingOrder();
+            return;
+        }
+
+        // 再在弹窗栈中查找
+        LinkedListNode<UIPanel> popupNode = _popupStack.Find(panel);
+        if (popupNode != null)
+        {
+            _popupStack.Remove(popupNode);
+            HideTopInternal(panel, temporary: false);
+            RefreshSiblingOrder();
+        }
+    }
+
     #region 弹窗
 
     /// <summary>
@@ -173,7 +206,7 @@ public class UIMgr : MonoSingleton<UIMgr>
 
     private void ReturnToPool(UIPanel panel)
     {
-        PoolMgr.Instance.Recycle(panel);
+        PoolMgr.Instance?.Recycle(panel);
     }
 
     private void ShowInternal(UIPanel panel, object data)

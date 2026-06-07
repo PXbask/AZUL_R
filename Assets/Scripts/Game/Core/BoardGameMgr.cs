@@ -75,12 +75,12 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
             //动态生成人类玩家棋盘
             int gameId = PlayerMgr.Instance.GetGameIdByClientId(clientId);
             var boardTrans = GetBoardTransByGameId(gameId);
-            NgoMgr.Instance.SpawnFromPool<PlayerBoard>(
+            var boardObj = NgoMgr.Instance.SpawnFromPool<PlayerBoard>(
                (ulong)clientId,
                 boardTrans.position,
                 boardTrans.rotation
             );
-
+            var board = boardObj.GetComponent<PlayerBoard>();
             //动态生成人类玩家网络预制体
             var seatTrans = GetSeatTransByGameId(gameId);
             var obj = NgoMgr.Instance.SpawnFromPool<PlayerController>(
@@ -89,6 +89,8 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
                 seatTrans.rotation);
             var pc = obj.GetComponent<PlayerController>();
             pc.PlayerData.Value = PlayerMgr.Instance.GetPlayerDataByGameId(gameId);
+
+            m_GameController.MakeBoardGamePlayer(pc, board);
         }
         else
         {
@@ -96,12 +98,12 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
             //动态生成Ai玩家棋盘
             int gameId = PlayerMgr.Instance.GetGameIdByClientId(clientId);
             var boardTrans = GetBoardTransByGameId(gameId);
-            NgoMgr.Instance.SpawnFromPool<PlayerBoard>(
+            var boardObj = NgoMgr.Instance.SpawnFromPool<PlayerBoard>(
                localClientId,
                 boardTrans.position,
                 boardTrans.rotation
             );
-
+            var board = boardObj.GetComponent<PlayerBoard>();
             //生成Ai玩家网络预制体
             var seatTrans = GetSeatTransByGameId(gameId);
             var aiObj =NgoMgr.Instance.SpawnFromPool<PlayerController>(
@@ -110,6 +112,8 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
                 seatTrans.rotation);
             var pc = aiObj.GetComponent<PlayerController>();
             pc.PlayerData.Value = PlayerMgr.Instance.GetPlayerDataByGameId(gameId);
+
+            m_GameController.MakeBoardGamePlayer(pc, board);
         }
     }
 

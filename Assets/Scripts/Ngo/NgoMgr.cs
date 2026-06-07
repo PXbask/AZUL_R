@@ -273,6 +273,12 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
         PlayerMgr.Instance.UpdateConnectedPlayerData(arr, lobbyConfig);
     }
 
+    [ClientRpc]
+    public void ShowPopupContentClientRpc(string content)
+    {
+        UIMgr.Instance.ShowPopup(UIStatic.PopupPanelName, content);
+    }
+
     [ServerRpc(RequireOwnership = false)]
     public void ChangePlayerReadyStateServerRpc(int clientId, bool v)
     {

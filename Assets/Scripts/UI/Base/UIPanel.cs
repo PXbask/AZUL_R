@@ -20,4 +20,9 @@ public abstract class UIPanel : MonoBehaviour, IPoolObject, IUIPanel
     public virtual void OnUpdate() { }
     public virtual void OnHide() { }
     public virtual void OnRelease() { }
+
+    /// <summary>
+    /// 主动隐藏自身，UIMgr 会从栈中找到并移除此面板
+    /// </summary>
+    public void Hide() => UIMgr.Instance.HidePanel(this);
 }

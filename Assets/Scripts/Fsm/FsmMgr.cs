@@ -1,18 +1,25 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class FsmMgr : MonoSingleton<FsmMgr>
+public class FsmMgr<TOwner>
 {
-    private readonly Dictionary<Type, IFsmState> _states = new Dictionary<Type, IFsmState>();
-    private IFsmState _currentState;
+    private readonly Dictionary<Type, IFsmState<TOwner>> _states = new Dictionary<Type, IFsmState<TOwner>>();
+    private IFsmState<TOwner> _currentState;
 
-    public IFsmState CurrentState => _currentState;
+    public IFsmState<TOwner> CurrentState => _currentState;
+
+    public TOwner Owner { get; private set; }
+
+    public FsmMgr(TOwner owner)
+    {
+        Owner = owner;
+    }
 
     /// <summary>
     /// 注册状态
     /// </summary>
-    public void AddState<T>() where T : FsmState, new()
+    public void AddState<T>() where T : FsmState<TOwner>, new()
     {
         Type type = typeof(T);
         if (_states.ContainsKey(type))
@@ -28,10 +35,10 @@ public class FsmMgr : MonoSingleton<FsmMgr>
     /// <summary>
     /// 移除状态
     /// </summary>
-    public void RemoveState<T>() where T : FsmState
+    public void RemoveState<T>() where T : FsmState<TOwner>
     {
         Type type = typeof(T);
-        if (_states.TryGetValue(type, out IFsmState state))
+        if (_states.TryGetValue(type, out IFsmState<TOwner> state))
         {
             if (_currentState == state)
             {
@@ -47,13 +54,27 @@ public class FsmMgr : MonoSingleton<FsmMgr>
         }
     }
 
+    public void RemoveAllStates()
+    {
+        if (_currentState != null)
+        {
+            _currentState.OnLeave(this);
+            _currentState = null;
+        }
+        foreach (var state in _states.Values)
+        {
+            state.OnRelease(this);
+        }
+        _states.Clear();
+    }
+
     /// <summary>
     /// 切换到目标状态
     /// </summary>
-    public void ChangeState<T>() where T : FsmState
+    public void ChangeState<T>(object data = null) where T : FsmState<TOwner>
     {
         Type type = typeof(T);
-        if (!_states.TryGetValue(type, out IFsmState nextState))
+        if (!_states.TryGetValue(type, out IFsmState<TOwner> nextState))
         {
             Debug.LogError($"[FsmMgr] State {type.Name} not registered.");
             return;
@@ -67,19 +88,18 @@ public class FsmMgr : MonoSingleton<FsmMgr>
     /// <summary>
     /// 是否拥有某状态
     /// </summary>
-    public bool HasState<T>() where T : FsmState
+    public bool HasState<T>() where T : FsmState<TOwner>
     {
         return _states.ContainsKey(typeof(T));
     }
 
-    private void Update()
+    public void Update()
     {
         _currentState?.OnUpdate(this);
     }
 
-    protected override void OnDestroy()
+    public void OnDestroy()
     {
-        base.OnDestroy();
         _currentState?.OnLeave(this);
         foreach (var state in _states.Values)
         {

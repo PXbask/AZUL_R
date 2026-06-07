@@ -4,7 +4,8 @@ using UnityEngine;
 
 public static class UIStatic
 {
-    public static readonly string CreatePanelName = "CreatePanel";
-    public static readonly string JoinPanelName = "JoinPanel";
-    public static readonly string LobbyPanelName = "LobbyPanel";
+    public static readonly string CreatePanelName = nameof(CreatePanel);
+    public static readonly string JoinPanelName = nameof(JoinPanel);
+    public static readonly string LobbyPanelName = nameof(LobbyPanel);
+    public static readonly string PopupPanelName = nameof(PopupPanel);
 }
