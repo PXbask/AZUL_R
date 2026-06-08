@@ -174,6 +174,16 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
         }
     }
 
+    public PlayerData GetPlayerDataByClientId(int clientId)
+    {
+        if (ConnectedPlayerData.TryGetValue(clientId, out PlayerData data))
+        {
+            return data;
+        }
+        Debug.LogError($"GetPlayerDataByClientId error, clientId: {clientId}");
+        return default;
+    }
+
     public PlayerData GetPlayerDataByGameId(int gameId)
     {
         foreach (var data in ConnectedPlayerData.Values)

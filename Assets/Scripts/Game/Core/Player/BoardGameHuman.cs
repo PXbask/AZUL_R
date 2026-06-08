@@ -7,7 +7,7 @@ public class BoardGameHuman : BoardGamePlayer
 {
     public override PlayerType PlayerType => PlayerType.Human;
 
-    public BoardGameHuman(GameTable table, PlayerController controller, PlayerBoard board) : base(table, controller, board)
+    public BoardGameHuman(int clientId, GameTable table, PlayerBoard board) : base(clientId, table, board)
     {
     }
 }

@@ -7,7 +7,7 @@ public class BoardGameAi : BoardGamePlayer
 {
     public override PlayerType PlayerType => PlayerType.AI;
 
-    public BoardGameAi(GameTable table, PlayerController controller, PlayerBoard board) : base(table, controller, board)
+    public BoardGameAi(int clientId, GameTable table, PlayerBoard board) : base(clientId, table, board)
     {
     }
 }

@@ -10,6 +10,11 @@ public interface IBoardGamePlayer
     int SeatId { get; }
 
     /// <summary>
+    /// 连接号
+    /// </summary>
+    int ClientId { get; }
+
+    /// <summary>
     /// 玩家类型
     /// </summary>
     PlayerType PlayerType { get; }

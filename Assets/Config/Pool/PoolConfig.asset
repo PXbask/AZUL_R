@@ -25,3 +25,5 @@ MonoBehaviour:
     maxSize: 4
   - prefab: {fileID: 1334209855931052655, guid: a04da901fd991814f89ed82c85ee393b, type: 3}
     maxSize: 10
+  - prefab: {fileID: 5931887832738610902, guid: 734529a4f57c9e240b7133d458052f6e, type: 3}
+    maxSize: 9

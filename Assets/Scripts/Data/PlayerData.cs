@@ -25,4 +25,28 @@ public struct PlayerData : INetworkSerializable
         serializer.SerializeValue(ref Name);
         serializer.SerializeValue(ref IsReady);
     }
+
+    public static bool operator ==(PlayerData a, PlayerData b)
+    {
+        return a.PlayerType == b.PlayerType
+            && a.ClientId == b.ClientId
+            && a.GameId == b.GameId
+            && a.Name == b.Name
+            && a.IsReady == b.IsReady;
+    }
+
+    public static bool operator !=(PlayerData a, PlayerData b)
+    {
+        return !(a == b);
+    }
+
+    public override bool Equals(object obj)
+    {
+        return obj is PlayerData other && this == other;
+    }
+
+    public override int GetHashCode()
+    {
+        return System.HashCode.Combine(PlayerType, ClientId, GameId, Name.GetHashCode(), IsReady);
+    }
 }

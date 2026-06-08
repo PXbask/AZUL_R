@@ -10,7 +10,16 @@ public class BoardGameController : MonoBehaviour
     private List<GameTable> GameTables = new List<GameTable>();
 
     [SerializeField]
+    private Transform DiskTrans;
+
+    [SerializeField]
+    private Transform PieceBagTrans;
+
+    [SerializeField]
     private Dictionary<int, GameTable> GameTableDic = new Dictionary<int, GameTable>();
+
+    [SerializeField]
+    private Dictionary<int, FactoryDisk> FactoryDiskDic = new Dictionary<int, FactoryDisk>();
 
     private Dictionary<int, BoardGamePlayer> BoardGamePlayerDic = new();
 
@@ -22,6 +31,7 @@ public class BoardGameController : MonoBehaviour
     {
         GameTableDic.Clear();
         BoardGamePlayerDic.Clear();
+        FactoryDiskDic.Clear();
 
         InitGameFsm();
 
@@ -42,12 +52,12 @@ public class BoardGameController : MonoBehaviour
 
     private void Update()
     {
-        GameFsm.Update();
+        GameFsm?.Update();
     }
 
     private void OnDestroy()
     {
-        GameFsm.OnDestroy();
+        GameFsm?.OnDestroy();
         GameFsm = null;
     }
 
@@ -77,19 +87,24 @@ public class BoardGameController : MonoBehaviour
         }
     }
 
-    public void MakeBoardGamePlayer(PlayerController controller, PlayerBoard board)
+    public Transform GetDiskTrans()
     {
-        var playerData = controller.PlayerData.Value;
-        if(GameTableDic.TryGetValue(playerData.GameId, out var table))
+        return DiskTrans;
+    }
+
+    public void MakeBoardGamePlayer(int clientId, int gameId, PlayerBoard board)
+    {
+        var playerData = PlayerMgr.Instance.GetPlayerDataByGameId(gameId);  
+        if(GameTableDic.TryGetValue(gameId, out var table))
         {
             BoardGamePlayer player = null;
             if(playerData.PlayerType == PlayerType.Human)
             {
-                player = new BoardGameHuman(table, controller, board);
+                player = new BoardGameHuman(clientId, table, board);
             }
             else if(playerData.PlayerType == PlayerType.AI)
             {
-                player = new BoardGameAi(table, controller, board);
+                player = new BoardGameAi(clientId, table, board);
             }
 
             if (BoardGamePlayerDic.ContainsKey(player.SeatId))
@@ -110,6 +125,18 @@ public class BoardGameController : MonoBehaviour
         else
         {
             Debug.LogError($"cannot find table with gameid:{playerData.GameId}");
+        }
+    }
+
+    public void AddFactoryDisk(int index, FactoryDisk disk)
+    {
+        if (!FactoryDiskDic.ContainsKey(index))
+        {
+            FactoryDiskDic[index] = disk;
+        }
+        else
+        {
+            Debug.LogError("same index factory disk added. index:" + index);
         }
     }
 

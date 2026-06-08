@@ -1,8 +1,10 @@
-﻿using System;
+﻿using AZUL;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Net;
 using Unity.Netcode;
+using UnityEditor.PackageManager;
 using UnityEngine;
 
 public class NgoMgr : NetcodeSingleton<NgoMgr>
@@ -271,6 +273,18 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
     public void UpdateLobbyPlayerDataClientRpc(PlayerData[] arr, LobbyConfig lobbyConfig)
     {
         PlayerMgr.Instance.UpdateConnectedPlayerData(arr, lobbyConfig);
+    }
+
+    [ClientRpc]
+    public void SpawnPlayerBoardsClientRpc()
+    {
+        BoardGameMgr.Instance.SpawnAllPlayerBoards();
+    }
+
+    [ClientRpc]
+    public void SpawnFactoryDisksClientRpc()
+    {
+        BoardGameMgr.Instance.SpawnAllFactoryDisks();
     }
 
     [ClientRpc]

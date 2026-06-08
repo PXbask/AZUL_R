@@ -8,15 +8,19 @@ public abstract class BoardGamePlayer : IBoardGamePlayer
     protected int m_SeatId;
     public int SeatId => m_SeatId;
 
+    protected int m_ClientId;
+    public int ClientId => m_ClientId;
+
     public virtual PlayerType PlayerType => PlayerType.None;
 
     public string PlayerName
     {
         get
         {
-            if (PlayerController != null && PlayerController.PlayerData != null)
+            var data = PlayerMgr.Instance.GetPlayerDataByClientId(m_ClientId);
+            if (data != default)
             {
-                return PlayerController.PlayerData.Value.Name.ToString();
+                return data.Name.ToString();
             }
             else
             {
@@ -27,20 +31,13 @@ public abstract class BoardGamePlayer : IBoardGamePlayer
 
     public GameTable GameTable { get; protected set; }
 
-    public PlayerController PlayerController { get; protected set; }
-
     public PlayerBoard PlayerBoard { get; protected set; }
 
-    public BoardGamePlayer(GameTable table, PlayerController controller, PlayerBoard board)
+    public BoardGamePlayer(int clientId, GameTable table, PlayerBoard board)
     {
+        m_ClientId = clientId;
         GameTable = table;
-        PlayerController = controller;
         PlayerBoard = board;
-
-        if(controller.PlayerData.Value.GameId != GameTable.GameId)
-        {
-            Debug.LogError("PlayerController's GameId does not match GameTable's GameId");
-        }
         m_SeatId = GameTable.GameId;
     }
 }

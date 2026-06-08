@@ -43,7 +43,7 @@ public class PlayerController : NetworkBehaviour, IPoolObject
     {
         if (newValue.PlayerType == previousValue.PlayerType) return;
 
-        All[newValue.GameId] = this;
+        All[newValue.ClientId] = this;
         bool isHuman = newValue.PlayerType == PlayerType.Human;
         if (isHuman)
         {
