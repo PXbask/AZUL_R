@@ -18,7 +18,7 @@ public abstract class PieceTokenBase : MonoBehaviour, IPieceToken, IPoolObject
 {
     [SerializeField]
     private IPlaceTokenArea m_PlaceTokenArea = null;
-    public IPlaceTokenArea OwnerPlaceTokenArea
+    public virtual IPlaceTokenArea OwnerPlaceTokenArea
     {
         get => m_PlaceTokenArea;
         set => m_PlaceTokenArea = value;

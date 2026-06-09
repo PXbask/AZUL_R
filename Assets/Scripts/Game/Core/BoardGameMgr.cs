@@ -173,6 +173,7 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
             int gameId = PlayerMgr.Instance.GetGameIdByClientId(clientId);
             var boardTrans = GetBoardTransByGameId(gameId);
             var board = PoolMgr.Instance.Spawn<PlayerBoard>(boardTrans);
+            board.Init(gameId);
             board.transform.SetPositionAndRotation(boardTrans.position, boardTrans.rotation);
 
             AddBoardGamePlayer(clientId, gameId, board);

@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace AZUL
 {
-    public class LosePlaceTokenArea : BasePlaceTokenArea
+    public class LosePlaceTokenArea : NormalPlaceTokenArea
     {
         [SerializeField]
         private int m_LosePoint;

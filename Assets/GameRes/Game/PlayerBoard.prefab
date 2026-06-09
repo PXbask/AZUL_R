@@ -217,6 +217,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 12103e7d6bf941f4dbd53be723eacc2d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ScoreTrans: {fileID: 6169870717145142242}
+  LeftTrans: {fileID: 7436062462539988337}
+  RightTrans: {fileID: 7104891821647608113}
+  LoseTrans: {fileID: 2937074024418057716}
+  ScorePieceToken: {fileID: 0}
+  ScorePlaceTokenAreas: []
+  LosePlaceTokenAreas: []
 --- !u!1 &3169638055619073384
 GameObject:
   m_ObjectHideFlags: 0
