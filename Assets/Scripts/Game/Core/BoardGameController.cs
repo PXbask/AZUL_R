@@ -1,4 +1,5 @@
 ﻿using AZUL;
+using DG.Tweening;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -40,6 +41,10 @@ public class BoardGameController : MonoBehaviour
 
     public int FirstPlayerSeatId { get; set; } = -1;
 
+    public int RoundNum { get; set; } = 0;
+
+    public int CurrentPlayerSeatId { get; private set; }
+
     public void Init()
     {
         GameTableDic.Clear();
@@ -52,6 +57,14 @@ public class BoardGameController : MonoBehaviour
         {
             GameTableDic.Add(item.GameId, item);
         }
+
+        ResetGame();
+    }
+
+    public void ResetGame()
+    {
+        FirstPlayerSeatId = -1;
+        RoundNum = 0;
     }
 
     private void InitGameFsm()
@@ -60,6 +73,7 @@ public class BoardGameController : MonoBehaviour
         GameFsm.AddState<IdleFsmState>();
         GameFsm.AddState<SelectFirstPlayerFsmState>();
         GameFsm.AddState<DealCardsFsmState>();
+        GameFsm.AddState<PlayerTurnFsmState>();
 
         GameFsm.ChangeState<IdleFsmState>();
     }
@@ -263,5 +277,26 @@ public class BoardGameController : MonoBehaviour
                 }
             }
         }
+
+        if (NetworkManager.Singleton.IsHost)
+        {
+            DOVirtual.DelayedCall(GameStatic.TokenGoToAreaAnimInterval, () =>
+            {
+                ++RoundNum;
+                int currentSeat = GetCurrentSeatIdByRoundNum(RoundNum);
+                EventMgr.Instance.Trigger(new DealCardCompleteEvent { SeatId = currentSeat });
+            });
+        }
+    }
+
+    private int GetCurrentSeatIdByRoundNum(int roundNum)
+    {
+        return (FirstPlayerSeatId + roundNum - 1) % GameMgr.Instance.LobbyConfig.TotalPlayerNum;
+    }
+
+    public void SetCurrentPlayerTurn(int seatId)
+    {
+        GameFsm.ChangeState<PlayerTurnFsmState>(seatId);
+        CurrentPlayerSeatId = seatId;
     }
 }

@@ -82,7 +82,7 @@ public abstract class PieceTokenBase : MonoBehaviour, IPieceToken, IPoolObject
             return;
 
         Interactable = false;
-        m_GotoAreaTween = Transform.DOMove(area.PlaceDestination, 0.5f).SetEase(Ease.InOutSine);
+        m_GotoAreaTween = Transform.DOMove(area.PlaceDestination, GameStatic.TokenGoToAreaAnimInterval).SetEase(Ease.InOutSine);
         m_GotoAreaTween.onKill += () =>
         {
             Interactable = true;

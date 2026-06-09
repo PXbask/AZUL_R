@@ -213,4 +213,14 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
     {
         GameController.SpawnAllPieceTokens(factoryData, cols);
     }
+
+    public void SetCurrentPlayerTurn(int seatId)
+    {
+        GameController.SetCurrentPlayerTurn(seatId);
+    }
+
+    public int GetCurrentPlayerTurn()
+    {
+        return GameController.CurrentPlayerSeatId;
+    }
 }

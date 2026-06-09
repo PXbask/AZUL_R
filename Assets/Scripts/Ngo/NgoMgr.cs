@@ -299,6 +299,12 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
         BoardGameMgr.Instance.SpawnAllPieceTokens(factoryData, cols);
     }
 
+    [ClientRpc]
+    public void SetCurrentPlayerTurnClientRpc(int seatId)
+    {
+        BoardGameMgr.Instance.SetCurrentPlayerTurn(seatId);
+    }
+
     //[ClientRpc]
     //public void FsmChangeState<T>(object data) where T : FsmState<BoardGameController>
     //{

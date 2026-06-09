@@ -13,4 +13,6 @@ public static class GameStatic
     public static readonly string LocalIp = "127.0.0.1";
 
     public static readonly int CardNumPerDisk = 4;
+
+    public static readonly float TokenGoToAreaAnimInterval = 0.5f;
 }

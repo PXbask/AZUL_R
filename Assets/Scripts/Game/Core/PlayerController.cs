@@ -112,4 +112,6 @@ public class PlayerController : NetworkBehaviour, IPoolObject
     public void Recycle()
     {
     }
+
+    public Camera GetPlayerCamera() => Camera;
 }
