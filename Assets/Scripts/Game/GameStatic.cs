@@ -11,4 +11,6 @@ public static class GameStatic
     public static readonly ushort AiDefaultPort = 9999;
 
     public static readonly string LocalIp = "127.0.0.1";
+
+    public static readonly int CardNumPerDisk = 4;
 }

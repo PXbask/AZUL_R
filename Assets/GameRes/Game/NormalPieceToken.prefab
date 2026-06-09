@@ -114,8 +114,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4753732588338789603}
+  - component: {fileID: 1619711667295058777}
+  - component: {fileID: 7833761857222388112}
   m_Layer: 0
-  m_Name: PieceToken
+  m_Name: NormalPieceToken
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -137,3 +139,34 @@ Transform:
   - {fileID: 7522269947693762530}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1619711667295058777
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2660619739746561028}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53a36a05d7f6d7d42a217529a71c7cfc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  emptyTokenMat: {fileID: 2100000, guid: 81efa18569f194e4b80d7427e67116ac, type: 2}
+  blueTokenMat: {fileID: 2100000, guid: f8c6a65dc28108b40ab79a0eb8c35fc4, type: 2}
+  yellowTokenMat: {fileID: 2100000, guid: 6bbdb6f2eedca114b9cd7f3f3a386387, type: 2}
+  redTokenMat: {fileID: 2100000, guid: c9685146d470e0546a09d6e0101e2794, type: 2}
+  blackTokenMat: {fileID: 2100000, guid: 8721e1cb84bc5f24d87f78bd30bf9537, type: 2}
+  whiteTokenMat: {fileID: 2100000, guid: 0b85ab6a0a220ef4eb36de83de7094d3, type: 2}
+--- !u!114 &7833761857222388112
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2660619739746561028}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ae5450965e893c547bec951ab087e741, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Renderer: {fileID: 6001804614241837539}

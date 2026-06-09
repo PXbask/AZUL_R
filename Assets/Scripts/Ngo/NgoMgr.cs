@@ -293,6 +293,18 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
         UIMgr.Instance.ShowPopup(UIStatic.PopupPanelName, content);
     }
 
+    [ClientRpc]
+    public void SpawnPieceTokensClientRpc(int[] factoryData, int cols)
+    {
+        BoardGameMgr.Instance.SpawnAllPieceTokens(factoryData, cols);
+    }
+
+    //[ClientRpc]
+    //public void FsmChangeState<T>(object data) where T : FsmState<BoardGameController>
+    //{
+    //    BoardGameMgr.Instance.FsmChangeState<T>(data);
+    //}
+
     [ServerRpc(RequireOwnership = false)]
     public void ChangePlayerReadyStateServerRpc(int clientId, bool v)
     {

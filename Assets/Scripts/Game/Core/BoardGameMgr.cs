@@ -187,6 +187,7 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
         for (int i = 0; i < diskNum; i++)
         {
             var disk = PoolMgr.Instance.Spawn<FactoryDisk>(diskTrans);
+            disk.Init();
             var degreePiece = 360f / diskNum;
             Vector3 pos = new
                 (0.35f * Mathf.Cos(Mathf.Deg2Rad * i * degreePiece),
@@ -198,8 +199,18 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
         }
     }
 
+    public void FsmChangeState<T>(object data) where T : FsmState<BoardGameController>
+    {
+        GameController.ChangeState<T>(data);
+    }
+
     private int GetFactoryDisksByPlayerNum(int num)
     {
         return 2 * num + 1;
+    }
+
+    public void SpawnAllPieceTokens(int[] factoryData, int cols)
+    {
+        GameController.SpawnAllPieceTokens(factoryData, cols);
     }
 }

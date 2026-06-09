@@ -18,7 +18,7 @@ public class DataMgr : MonoSingleton<DataMgr>
     /// </summary>
     private JArray LoadJson(string fileName)
     {
-        string path = Path.Combine(Application.streamingAssetsPath + "\\GameCfg", fileName);
+        string path = Application.streamingAssetsPath + "/GameCfg/" + fileName + ".json";
         if (!File.Exists(path))
         {
             Debug.LogError($"[DataMgr] JSON 文件不存在: {path}");

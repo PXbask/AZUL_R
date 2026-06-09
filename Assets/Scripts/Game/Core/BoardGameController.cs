@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 public class BoardGameController : MonoBehaviour
@@ -25,6 +26,18 @@ public class BoardGameController : MonoBehaviour
 
     private FsmMgr<BoardGameController> GameFsm = null;
 
+    /// <summary>
+    /// 剩余的棋子Id
+    /// </summary>
+    private List<int> m_RemainPieceIds = new List<int>();
+    public List<int> RemainPieceIDs => m_RemainPieceIds;
+
+    /// <summary>
+    /// 放入弃牌区的棋子Id
+    /// </summary>
+    private List<int> m_LostPieceIds = new List<int>();
+    public List<int> LostPieceIDs => m_LostPieceIds;
+
     public int FirstPlayerSeatId { get; set; } = -1;
 
     public void Init()
@@ -46,8 +59,14 @@ public class BoardGameController : MonoBehaviour
         GameFsm = new FsmMgr<BoardGameController>(this);
         GameFsm.AddState<IdleFsmState>();
         GameFsm.AddState<SelectFirstPlayerFsmState>();
+        GameFsm.AddState<DealCardsFsmState>();
 
         GameFsm.ChangeState<IdleFsmState>();
+    }
+
+    public void ChangeState<T>(object data) where T : FsmState<BoardGameController>
+    {
+        GameFsm.ChangeState<T>(data);
     }
 
     private void Update()
@@ -150,6 +169,99 @@ public class BoardGameController : MonoBehaviour
         {
             Debug.LogError($"cannot find player with seatid:{seatId}");
             return null;
+        }
+    }
+
+    /// <summary>
+    /// 发牌
+    /// </summary>
+    public void DealCards(bool reset)
+    {
+        if (reset)
+        {
+            m_LostPieceIds.Clear();
+            m_RemainPieceIds.Clear();
+
+            var tableList = DataMgr.Instance.Table.TbPiece.DataList;
+            for (int i = 0; i < tableList.Count; i++)
+            {
+                m_RemainPieceIds.Add(tableList[i].Id);
+            }
+        }
+
+        //计算工厂圆盘的牌
+        int rows = FactoryDiskDic.Count;
+        int cols = GameStatic.CardNumPerDisk;
+        int[] factoryData = new int[rows * cols];
+        List<int> tmpList = null;
+        for(int i = 0; i < rows; i++)
+        {
+            tmpList = TakeRandomPieces(cols);
+            for(int j = 0; j < tmpList.Count; j++)
+            {
+                // 如果 tmpList 可能小于 cols，使用 -1 作为空槽
+                int val = (j < tmpList.Count) ? tmpList[j] : -1;
+                factoryData[i * cols + j] = val;
+            }
+        }
+
+        NgoMgr.Instance.SpawnPieceTokensClientRpc(factoryData, cols);
+    }
+
+    /// <summary>
+    /// 从 RemainPieceIds 中随机取出指定数量的元素，并从原列表中移除
+    /// </summary>
+    /// <param name="count">要取出的元素数量</param>
+    /// <returns>随机抽取的子列表</returns>
+    private List<int> TakeRandomPieces(int count)
+    {
+        // 如果请求数量超过剩余数量，则只取剩余的全部
+        int actualCount = Mathf.Min(count, m_RemainPieceIds.Count);
+
+        List<int> result = new List<int>(actualCount);
+
+        // 随机抽取 n 次
+        for (int i = 0; i < actualCount; i++)
+        {
+            int randomIndex = UnityEngine.Random.Range(0, m_RemainPieceIds.Count);
+            result.Add(m_RemainPieceIds[randomIndex]);
+            m_RemainPieceIds.RemoveAt(randomIndex);
+        }
+
+        return result;
+    }
+
+    public void SpawnAllPieceTokens(int[] factoryData, int cols)
+    {
+        if (!NetworkManager.Singleton.IsHost)
+        {
+            GameFsm.ChangeState<DealCardsFsmState>();
+        }
+        if (factoryData == null)
+        {
+            Debug.LogError("SpawnAllPieceTokens: flatFactoryData is null");
+            return;
+        }
+        int rows = (cols > 0) ? (factoryData.Length / cols) : 0;
+
+        for (int i = 0; i < rows; i++)
+        {
+            for (int j = 0; j < cols; j++)
+            {
+                int pieceId = factoryData[i * cols + j];
+                if (pieceId >= 0)
+                {
+                    var disk = FactoryDiskDic[i];
+                    //工厂圆盘上生成棋子
+                    NormalPieceToken token = PoolMgr.Instance.Spawn<NormalPieceToken>();
+                    token.Init(pieceId);
+                    token.transform.position = PieceBagTrans.position;
+
+                    //动画
+                    IPlaceTokenArea area = disk.GetArea(j);
+                    token.GotoArea(area);
+                }
+            }
         }
     }
 }

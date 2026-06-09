@@ -12,9 +12,9 @@ GameObject:
   - component: {fileID: 6526058407334977185}
   - component: {fileID: 8371467801843553523}
   - component: {fileID: 8286344207154895055}
-  - component: {fileID: 6182208208955141402}
+  - component: {fileID: 3198244818967557274}
   m_Layer: 0
-  m_Name: PlaceTokenArea
+  m_Name: NormalPlaceTokenArea
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -107,7 +107,7 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
---- !u!114 &6182208208955141402
+--- !u!114 &3198244818967557274
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -116,11 +116,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 8981899907474222630}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 00b888929c1fda54abcf1ad86a6a57a0, type: 3}
+  m_Script: {fileID: 11500000, guid: 49b97f77cd2665044904f7d036894068, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  token: {fileID: 0}
-  positionGroup: 0
-  camp: 0
-  Row: 0
-  Column: 0
+  m_Row: 0
+  m_Column: 0
+  m_PositionGroup: 0
+  m_SeatId: 0
+  m_Token: {fileID: 0}

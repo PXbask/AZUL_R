@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 public class SelectFirstPlayerFsmState : FsmState<BoardGameController>
@@ -16,6 +17,8 @@ public class SelectFirstPlayerFsmState : FsmState<BoardGameController>
     public override void OnUpdate(FsmMgr<BoardGameController> fsm)
     {
         base.OnUpdate(fsm);
+        if (!NetworkManager.Singleton.IsHost) return;
+
         if (!m_Flag)
         {
             m_Flag = true;
@@ -35,5 +38,7 @@ public class SelectFirstPlayerFsmState : FsmState<BoardGameController>
             owner.FirstPlayerSeatId = seatId;
             NgoMgr.Instance.ShowPopupContentClientRpc($"选择的首位玩家:{player.PlayerName}");
         }
+        //发牌
+        fsm.ChangeState<DealCardsFsmState>(true);
     }
 }

@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace AZUL
 {
-    public class ColoredPlaceTokenArea : PlaceTokenArea
+    public class ColoredPlaceTokenArea : BasePlaceTokenArea
     {
         
     }

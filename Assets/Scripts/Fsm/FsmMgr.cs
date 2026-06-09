@@ -82,7 +82,7 @@ public class FsmMgr<TOwner>
 
         _currentState?.OnLeave(this);
         _currentState = nextState;
-        _currentState.OnEnter(this);
+        _currentState.OnEnter(this, data);
     }
 
     /// <summary>
