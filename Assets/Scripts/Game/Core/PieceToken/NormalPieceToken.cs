@@ -9,7 +9,7 @@ public class NormalPieceToken : PieceTokenBase
     [SerializeField]
     private MeshRenderer m_Renderer;
 
-    private cfg.AZUL.Piece m_PieceData;
+    public cfg.AZUL.Piece PieceData {  get; private set; }
 
     private PieceTokenDataBinding m_Binding;
 
@@ -20,8 +20,8 @@ public class NormalPieceToken : PieceTokenBase
 
     public void Init(int Id)
     {
-        m_PieceData = DataMgr.Instance.Table.TbPiece.DataMap[Id];
-        if(m_PieceData == null)
+        PieceData = DataMgr.Instance.Table.TbPiece.DataMap[Id];
+        if(PieceData == null)
         {
             Debug.LogError($"NormalPieceToken Init Failed, Id: {Id}");
         }
@@ -32,7 +32,7 @@ public class NormalPieceToken : PieceTokenBase
             Debug.LogError($"NormalPieceToken Init Failed, Id: {Id}, PieceTokenDataBinding is null");
         }
 
-        m_Renderer.material = m_Binding.GetMaterial((PieceColorType)m_PieceData.PieceTokenType);
+        m_Renderer.material = m_Binding.GetMaterial((PieceColorType)PieceData.PieceTokenType);
     }
 
     public override void OnSpawn()

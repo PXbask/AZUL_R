@@ -305,6 +305,13 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
         BoardGameMgr.Instance.SetCurrentPlayerTurn(seatId);
     }
 
+    [ClientRpc]
+    public void DoActionClientRpc(PlayerActionData data)
+    {
+        Debug.Log($"Client received Action: Action: {data}");
+        EventMgr.Instance.Trigger(new PlayerDoActionEvent { Data = data });
+    }
+
     //[ClientRpc]
     //public void FsmChangeState<T>(object data) where T : FsmState<BoardGameController>
     //{
@@ -315,5 +322,11 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
     public void ChangePlayerReadyStateServerRpc(int clientId, bool v)
     {
         PlayerMgr.Instance.PlayerSetReady(clientId, v);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    public void ClientDoActionServerRpc(PlayerActionData data)
+    {
+        BoardGameMgr.Instance.ClientDoAction(data);
     }
 }

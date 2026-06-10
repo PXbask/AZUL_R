@@ -15,13 +15,18 @@ public class BoardGameController : MonoBehaviour
     private Transform DiskTrans;
 
     [SerializeField]
-    private Transform PieceBagTrans;
+    private Transform CenterTrans;
+
+    [SerializeField]
+    public Transform PieceBagTrans;
 
     [SerializeField]
     private Dictionary<int, GameTable> GameTableDic = new Dictionary<int, GameTable>();
 
     [SerializeField]
-    private Dictionary<int, FactoryDisk> FactoryDiskDic = new Dictionary<int, FactoryDisk>();
+    public Dictionary<int, FactoryDisk> FactoryDiskDic = new Dictionary<int, FactoryDisk>();
+
+    public Dictionary<int, NormalPlaceTokenArea> MidTablePlaceAreas = new Dictionary<int, NormalPlaceTokenArea>();
 
     private Dictionary<int, BoardGamePlayer> BoardGamePlayerDic = new();
 
@@ -52,6 +57,7 @@ public class BoardGameController : MonoBehaviour
         FactoryDiskDic.Clear();
 
         InitGameFsm();
+        InitCenterTable();
 
         foreach (var item in GameTables)
         {
@@ -74,8 +80,24 @@ public class BoardGameController : MonoBehaviour
         GameFsm.AddState<SelectFirstPlayerFsmState>();
         GameFsm.AddState<DealCardsFsmState>();
         GameFsm.AddState<PlayerTurnFsmState>();
+        GameFsm.AddState<GameStepSettleFsmState>();
 
         GameFsm.ChangeState<IdleFsmState>();
+    }
+
+    private void InitCenterTable()
+    {
+        for(int i = 0; i < CenterTrans.childCount; i++)
+        {
+            var trans = CenterTrans.GetChild(i);
+            var area = trans.GetComponent<NormalPlaceTokenArea>();
+            if (area == null)
+            {
+                Debug.LogError("no NormalPlaceTokenArea component in object!");
+                continue;
+            }
+            area.Init(0, i, PlaceTokenPositionGroup.MidTable, GameStatic.NonePlayerSeatId);
+        }
     }
 
     public void ChangeState<T>(object data) where T : FsmState<BoardGameController>
@@ -289,6 +311,24 @@ public class BoardGameController : MonoBehaviour
         }
     }
 
+    public void OnPlayerTurnComplete()
+    {
+        if (MidFactoryAreaEmpty())
+        {
+            GameFsm.ChangeState<GameStepSettleFsmState>();
+            return;
+        }
+
+        ++RoundNum;
+        int currentSeat = GetCurrentSeatIdByRoundNum(RoundNum);
+        NgoMgr.Instance.SetCurrentPlayerTurnClientRpc(currentSeat);
+    }
+
+    private bool MidFactoryAreaEmpty()
+    {
+        return BoardGameUtility.FactorysEmpty() && BoardGameUtility.MidTableEmpty();
+    }
+
     private int GetCurrentSeatIdByRoundNum(int roundNum)
     {
         return (FirstPlayerSeatId + roundNum - 1) % GameMgr.Instance.LobbyConfig.TotalPlayerNum;
@@ -298,5 +338,15 @@ public class BoardGameController : MonoBehaviour
     {
         GameFsm.ChangeState<PlayerTurnFsmState>(seatId);
         CurrentPlayerSeatId = seatId;
+    }
+
+    public void AddLosePiece(int pieceId)
+    {
+        m_LostPieceIds.Add(pieceId);
+    }
+
+    public void AddRemainPiece(int pieceId)
+    {
+        m_RemainPieceIds.Add(pieceId);
     }
 }

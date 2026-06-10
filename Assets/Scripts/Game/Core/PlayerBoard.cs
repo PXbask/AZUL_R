@@ -22,6 +22,8 @@ namespace AZUL
 
         public int SeatId { get; private set;  }
 
+        public int Score { get; set; }
+
         public ScorePieceToken ScorePieceToken;
 
         /// <summary>

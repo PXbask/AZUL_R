@@ -7,7 +7,7 @@ namespace AZUL
     public class FactoryDisk : MonoBehaviour, IPoolObject
     {
         [SerializeField]
-        private List<NormalPlaceTokenArea> PlaceTokenAreas = new List<NormalPlaceTokenArea>();
+        public List<NormalPlaceTokenArea> PlaceTokenAreas = new List<NormalPlaceTokenArea>();
 
         public string PoolKey => nameof(FactoryDisk);
 

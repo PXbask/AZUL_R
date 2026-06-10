@@ -10,7 +10,7 @@ using UnityEngine;
 public class BoardGameMgr : MonoSingleton<BoardGameMgr>
 {
     private BoardGameController m_GameController;
-    private BoardGameController GameController
+    public BoardGameController GameController
     {
         get
         {
@@ -223,5 +223,17 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
     public int GetCurrentPlayerTurn()
     {
         return GameController.CurrentPlayerSeatId;
+    }
+
+    public void ClientDoAction(PlayerActionData data)
+    {
+        if(!NetworkManager.Singleton.IsHost)
+        {
+            Debug.LogError("Only Host can call ClientDoAction!");
+            return;
+        }
+
+        Debug.Log($"Host received Action:Action: {data}");
+        NgoMgr.Instance.DoActionClientRpc(data);
     }
 }

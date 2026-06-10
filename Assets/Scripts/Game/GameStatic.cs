@@ -15,4 +15,8 @@ public static class GameStatic
     public static readonly int CardNumPerDisk = 4;
 
     public static readonly float TokenGoToAreaAnimInterval = 0.5f;
+
+    public static readonly int NonePlayerSeatId = -1;
+    public static readonly int MidTableRowId = -1;
+    public static readonly int LoseAreaRowId = -1;
 }
