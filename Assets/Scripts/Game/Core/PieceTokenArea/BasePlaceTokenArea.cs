@@ -83,7 +83,7 @@ namespace AZUL
 
         public virtual void PlaceToken(IPieceToken pieceToken)
         {
-            //pieceToken.GotoArea(this);
+            pieceToken.GotoArea(this);
             Token = pieceToken;
         }
 

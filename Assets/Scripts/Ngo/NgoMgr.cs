@@ -294,9 +294,21 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
     }
 
     [ClientRpc]
-    public void SpawnPieceTokensClientRpc(int[] factoryData, int cols)
+    public void SpawnFactoryDiskPieceTokensClientRpc(int[] factoryData, int cols)
     {
-        BoardGameMgr.Instance.SpawnAllPieceTokens(factoryData, cols);
+        BoardGameMgr.Instance.SpawnFactoryDiskPieceTokens(factoryData, cols);
+    }
+
+    [ClientRpc]
+    public void SpawnFirstTokenClientRpc()
+    {
+        BoardGameMgr.Instance.SpawnFirstToken();
+    }
+
+    [ClientRpc]
+    public void SpawnScorePieceTokenClientRpc()
+    {
+        BoardGameMgr.Instance.SpawnScorePieceToken();
     }
 
     [ClientRpc]
@@ -310,6 +322,18 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
     {
         Debug.Log($"Client received Action: Action: {data}");
         EventMgr.Instance.Trigger(new PlayerDoActionEvent { Data = data });
+    }
+
+    [ClientRpc]
+    public void ShowSettlePanelClientRpc(BoardGamePlayerData[] playerDataArr)
+    {
+        EventMgr.Instance.Trigger(new ShowSettlePanelEvent { PlayerDatas = playerDataArr });
+    }
+
+    [ClientRpc]
+    public void ChangeStepSettleStateClientRpc()
+    {
+        BoardGameMgr.Instance.ChangeStepSettleState();
     }
 
     //[ClientRpc]

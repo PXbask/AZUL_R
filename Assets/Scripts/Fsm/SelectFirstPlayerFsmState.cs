@@ -29,7 +29,7 @@ public class SelectFirstPlayerFsmState : FsmState<BoardGameController>
     private void DecideFirstPlayer(FsmMgr<BoardGameController> fsm)
     {
         int totalPlayerNum = GameMgr.Instance.LobbyConfig.TotalPlayerNum;
-        int seatId = Random.Range(0, totalPlayerNum - 1);
+        int seatId = Random.Range(0, totalPlayerNum);
 
         var owner = fsm.Owner;
         var player = owner.GetBoardGamePlayerBySeatId(seatId);

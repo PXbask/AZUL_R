@@ -1,4 +1,5 @@
 ﻿using AZUL;
+using cfg.AZUL;
 using DG.Tweening;
 using System;
 using System.Collections;
@@ -71,6 +72,9 @@ public class BoardGameController : MonoBehaviour
     {
         FirstPlayerSeatId = -1;
         RoundNum = 0;
+
+        //m_RemainPieceIds.Clear();
+        //m_LostPieceIds.Clear();
     }
 
     private void InitGameFsm()
@@ -81,6 +85,8 @@ public class BoardGameController : MonoBehaviour
         GameFsm.AddState<DealCardsFsmState>();
         GameFsm.AddState<PlayerTurnFsmState>();
         GameFsm.AddState<GameStepSettleFsmState>();
+        GameFsm.AddState<FinalSettleFsmState>();
+        GameFsm.AddState<SettlePanelFsmState>();
 
         GameFsm.ChangeState<IdleFsmState>();
     }
@@ -97,6 +103,7 @@ public class BoardGameController : MonoBehaviour
                 continue;
             }
             area.Init(0, i, PlaceTokenPositionGroup.MidTable, GameStatic.NonePlayerSeatId);
+            MidTablePlaceAreas.Add(i, area);
         }
     }
 
@@ -223,6 +230,13 @@ public class BoardGameController : MonoBehaviour
             {
                 m_RemainPieceIds.Add(tableList[i].Id);
             }
+
+            //移除首位token
+            m_RemainPieceIds.Remove(0);
+            NgoMgr.Instance.SpawnFirstTokenClientRpc();
+
+            //为每位玩家生成分数token
+            NgoMgr.Instance.SpawnScorePieceTokenClientRpc();
         }
 
         //计算工厂圆盘的牌
@@ -240,8 +254,7 @@ public class BoardGameController : MonoBehaviour
                 factoryData[i * cols + j] = val;
             }
         }
-
-        NgoMgr.Instance.SpawnPieceTokensClientRpc(factoryData, cols);
+        NgoMgr.Instance.SpawnFactoryDiskPieceTokensClientRpc(factoryData, cols);
     }
 
     /// <summary>
@@ -267,8 +280,15 @@ public class BoardGameController : MonoBehaviour
         return result;
     }
 
-    public void SpawnAllPieceTokens(int[] factoryData, int cols)
+    public void SpawnFirstToken()
     {
+        //生成首位token
+        SpawnNormalPieceToArea(0, BoardGameUtility.GetEmptyTokenAreaInMidArea());
+    }
+
+    public void SpawnFactoryDiskPieceTokens(int[] factoryData, int cols)
+    {
+        //因为主机已经变为DealCardsFsmState状态，所以客户端需要自己切换状态
         if (!NetworkManager.Singleton.IsHost)
         {
             GameFsm.ChangeState<DealCardsFsmState>();
@@ -282,20 +302,14 @@ public class BoardGameController : MonoBehaviour
 
         for (int i = 0; i < rows; i++)
         {
+            var disk = FactoryDiskDic[i];
             for (int j = 0; j < cols; j++)
             {
                 int pieceId = factoryData[i * cols + j];
                 if (pieceId >= 0)
                 {
-                    var disk = FactoryDiskDic[i];
-                    //工厂圆盘上生成棋子
-                    NormalPieceToken token = PoolMgr.Instance.Spawn<NormalPieceToken>();
-                    token.Init(pieceId);
-                    token.transform.position = PieceBagTrans.position;
-
-                    //动画
                     IPlaceTokenArea area = disk.GetArea(j);
-                    token.GotoArea(area);
+                    SpawnNormalPieceToArea(pieceId, area);
                 }
             }
         }
@@ -311,11 +325,26 @@ public class BoardGameController : MonoBehaviour
         }
     }
 
+    public void SpawnScorePieceToken()
+    {
+        for (int i = 0; i < GameMgr.Instance.LobbyConfig.TotalPlayerNum; i++)
+        {
+            var player = GetBoardGamePlayerBySeatId(i);
+            var board = player.PlayerBoard;
+
+            var scoreToken = PoolMgr.Instance.Spawn<ScorePieceToken>();
+            board.BindScoreToken(scoreToken);
+        }
+    }
+
     public void OnPlayerTurnComplete()
     {
+        if(!NetworkManager.Singleton.IsHost)
+            return;
+
         if (MidFactoryAreaEmpty())
         {
-            GameFsm.ChangeState<GameStepSettleFsmState>();
+            NgoMgr.Instance.ChangeStepSettleStateClientRpc();
             return;
         }
 
@@ -336,8 +365,40 @@ public class BoardGameController : MonoBehaviour
 
     public void SetCurrentPlayerTurn(int seatId)
     {
+        Debug.Log($"SetCurrentPlayerTurn: seatId={seatId}");
+
         GameFsm.ChangeState<PlayerTurnFsmState>(seatId);
         CurrentPlayerSeatId = seatId;
+    }
+
+    public void FinalSettlement()
+    {
+        for(int i = 0; i< GameMgr.Instance.LobbyConfig.TotalPlayerNum; i++)
+        {
+            var player = GetBoardGamePlayerBySeatId(i);
+            var board = player.PlayerBoard;
+            if (board == null)
+            {
+                Debug.LogError($"PlayerBoard is null for camp: {i}");
+                return;
+            }
+
+            int fromScore, toScore;
+
+            fromScore = board.Score;
+            var score = BoardGameUtility.CalcualteFinalScoreGened(board);
+            BoardGameUtility.PlayerAddScore(board, score);
+            toScore = board.Score;
+            board.PlayAddScoreAnim(fromScore, toScore);
+        }
+    }
+
+    private void SpawnNormalPieceToArea(int pieceId, IPlaceTokenArea area)
+    {
+        NormalPieceToken token = PoolMgr.Instance.Spawn<NormalPieceToken>();
+        token.Init(pieceId);
+        token.transform.position = PieceBagTrans.position;
+        area.PlaceToken(token);
     }
 
     public void AddLosePiece(int pieceId)
@@ -348,5 +409,50 @@ public class BoardGameController : MonoBehaviour
     public void AddRemainPiece(int pieceId)
     {
         m_RemainPieceIds.Add(pieceId);
+    }
+
+    public List<BoardGamePlayer> GetWinner()
+    {
+        int maxScore = 0;
+        List<BoardGamePlayer> winners = new List<BoardGamePlayer>();
+        winners.Clear();
+        //寻找最高分
+        foreach (var player in BoardGamePlayerDic)
+        {
+            if(player.Value.PlayerBoard.Score > maxScore)
+            {
+                maxScore = player.Value.PlayerBoard.Score;
+            }
+        }
+        //寻找最高分的玩家
+        List<BoardGamePlayer> maxScorePlayers = new List<BoardGamePlayer>();
+        foreach (var player in BoardGamePlayerDic)
+        {
+            if (player.Value.PlayerBoard.Score == maxScore)
+            {
+                maxScorePlayers.Add(player.Value);
+            }
+        }
+        //进一步判断最多水平列
+        Dictionary<BoardGamePlayer, int> maxFilledRowNum = new Dictionary<BoardGamePlayer, int>();
+        int maxRowNum = 0;
+        foreach (var player in maxScorePlayers)
+        {
+            int filledRowNum = BoardGameUtility.GetColoredAreaRowFullFilledNum(player.PlayerBoard);
+            maxFilledRowNum[player] = filledRowNum;
+            if (filledRowNum > maxRowNum)
+            {
+                maxRowNum = filledRowNum;
+            }
+        }
+        //寻找最多水平列的玩家
+        foreach (var kvp in maxFilledRowNum)
+        {
+            if (kvp.Value == maxRowNum)
+            {
+                winners.Add(kvp.Key);
+            }
+        }
+        return winners;
     }
 }

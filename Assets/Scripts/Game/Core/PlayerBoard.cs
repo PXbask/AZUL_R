@@ -122,6 +122,43 @@ namespace AZUL
             }
         }
 
+        public void BindScoreToken(ScorePieceToken scoreToken)
+        {
+            ScorePieceToken = scoreToken;
+            var area = ScorePlaceTokenAreas[0];
+            area.PlaceToken(scoreToken);
+        }
+
+        public void PlayAddScoreAnim(int from, int to)
+        {
+            if (ScorePieceToken == null)
+            {
+                Debug.LogError("ScorePieceToken is null, cannot play score animation.");
+                return;
+            }
+
+            var fromArea = GetScorePlaceAreaByScore(from);
+            var toArea = GetScorePlaceAreaByScore(to);
+            if (ScorePieceToken != null && fromArea != null && toArea != null)
+            {
+                toArea.PlaceToken(ScorePieceToken);
+            }
+        }
+
+        private ScorePlaceTokenArea GetScorePlaceAreaByScore(int from)
+        {
+            int index = 0;
+            if (Score < ScorePlaceTokenAreas.Count)
+            {
+                index = Mathf.Clamp(Score, 0, ScorePlaceTokenAreas.Count);
+            }
+            else
+            {
+                index = Mathf.Clamp((Score - 1) % (ScorePlaceTokenAreas.Count - 1) + 1, 0, ScorePlaceTokenAreas.Count - 1);
+            }
+            return ScorePlaceTokenAreas[index];
+        }
+
         private void ClearRegisterComponents()
         {
             ScorePlaceTokenAreas.Clear();

@@ -192,6 +192,22 @@ public static class BoardGameUtility
         return result;
     }
 
+    /// <summary>
+    /// 获取中间区域首个空闲位置
+    /// </summary>
+    public static NormalPlaceTokenArea GetEmptyTokenAreaInMidArea()
+    {
+        var areaList = BoardGameMgr.Instance.GameController.MidTablePlaceAreas;
+        for (int column = 0; column < areaList.Count; column++)
+        {
+            if (areaList[column].IsEmpty())
+            {
+                return areaList[column];
+            }
+        }
+        return null;
+    }
+
     public static bool FactorysEmpty()
     {
         for (int i = 0; i < BoardGameMgr.Instance.GameController.FactoryDiskDic.Count; i++)
@@ -330,6 +346,28 @@ public static class BoardGameUtility
         return playerBoard.RightPlaceTokenAreas[row][column];
     }
 
+    /// <summary>
+    /// 根据给定的NormalPlaceTokenArea寻找哪个工厂模块包含它
+    /// </summary>
+    /// <param name="area"></param>
+    /// <returns></returns>
+    public static int GetFactoryIdByTokenArea(NormalPlaceTokenArea area)
+    {
+        foreach (var factoryPair in BoardGameMgr.Instance.GameController.FactoryDiskDic)
+        {
+            int id = factoryPair.Key;
+            var v = factoryPair.Value;
+            foreach (var marea in v.PlaceTokenAreas)
+            {
+                if(!marea.IsEmpty() && marea == area)
+                {
+                    return id;
+                }
+            }
+        }
+        return -1;
+    }
+
     public static void PlayerAddScore(PlayerBoard playerBoard, int score)
     {
         if (playerBoard == null) return;
@@ -374,7 +412,7 @@ public static class BoardGameUtility
         for (int i = 0; i < playerBoard.RightPlaceTokenAreas.Count; i++)
         {
             bool isFullFilled = true;
-            foreach (var area in playerBoard.RightPlaceTokenAreas[i].Areas)
+            foreach (var area in playerBoard.RightPlaceTokenAreas[i])
             {
                 if (area.IsEmpty())
                 {
@@ -388,5 +426,105 @@ public static class BoardGameUtility
             }
         }
         return false;
+    }
+
+    /// <summary>
+    /// 计算终局结算获得的分数
+    /// </summary>
+    /// <returns></returns>
+    public static int CalcualteFinalScoreGened(PlayerBoard board)
+    {
+        //寻找颜色区是否有满行，如果有满行则加满行分数
+        var filledRowNum = 0;
+        var filledColNum = 0;
+        var filledColorNum = 0;
+        for (int i = 0; i < board.RightPlaceTokenAreas.Count; i++)
+        {
+            bool isFullFilled = true;
+            foreach (var area in board.RightPlaceTokenAreas[i])
+            {
+                if (area.IsEmpty())
+                {
+                    isFullFilled = false;
+                    break;
+                }
+            }
+            if (isFullFilled)
+            {
+                filledRowNum++;
+            }
+        }
+        //寻找颜色区是否有满列，如果有满列则加满列分数
+        for (int i = 0; i < board.RightPlaceTokenAreas[0].Count; i++)
+        {
+            bool isFullFilled = true;
+            for (int j = 0; j < board.RightPlaceTokenAreas.Count; j++)
+            {
+                var area = GetColoredTokenAreaByPostion(board, j, i);
+                if (area.IsEmpty())
+                {
+                    isFullFilled = false;
+                    break;
+                }
+            }
+            if (isFullFilled)
+            {
+                filledColNum++;
+            }
+        }
+        //寻找全部颜色均填充的情况，如果全部颜色均填充则加满色分数
+        var dic = new Dictionary<PieceColorType, int>();
+        for (int i = 0; i < board.RightPlaceTokenAreas.Count; i++)
+        {
+            foreach (var area in board.RightPlaceTokenAreas[i])
+            {
+                if (!area.IsEmpty())
+                {
+                    var color = area.ColorType;
+                    if (dic.ContainsKey(color))
+                    {
+                        dic[color]++;
+                    }
+                    else
+                    {
+                        dic[color] = 1;
+                    }
+                }
+            }
+        }
+        foreach (var kvp in dic)
+        {
+            if (kvp.Value == board.RightPlaceTokenAreas.Count)
+            {
+                filledColorNum++;
+            }
+        }
+
+        return filledRowNum * 2 + filledColNum * 7 + filledColorNum * 10;
+    }
+
+    /// <summary>
+    /// 玩家的颜色区某行被填满的数量
+    /// </summary>
+    public static int GetColoredAreaRowFullFilledNum(PlayerBoard playerBoard)
+    {
+        int filledRowNum = 0;
+        for (int i = 0; i < playerBoard.RightPlaceTokenAreas.Count; i++)
+        {
+            bool isFullFilled = true;
+            foreach (var area in playerBoard.RightPlaceTokenAreas[i])
+            {
+                if (area.IsEmpty())
+                {
+                    isFullFilled = false;
+                    break;
+                }
+            }
+            if (isFullFilled)
+            {
+                filledRowNum++;
+            }
+        }
+        return filledRowNum;
     }
 }

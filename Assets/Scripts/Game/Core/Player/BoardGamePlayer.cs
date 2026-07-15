@@ -40,4 +40,16 @@ public abstract class BoardGamePlayer : IBoardGamePlayer
         PlayerBoard = board;
         m_SeatId = GameTable.GameId;
     }
+
+    public virtual BoardGamePlayerData GetPlayerData()
+    {
+        return new BoardGamePlayerData()
+        {
+            PlayerType = PlayerType,
+            ClientId = m_ClientId,
+            SeatId = m_SeatId,
+            Score = PlayerBoard.Score,
+            Name = PlayerName,
+        };
+    }
 }

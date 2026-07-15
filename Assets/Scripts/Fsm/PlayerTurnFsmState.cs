@@ -7,7 +7,6 @@ using Unity.Netcode;
 using Unity.VisualScripting;
 using Unity.VisualScripting.Antlr3.Runtime;
 using UnityEngine;
-using static System.Collections.Specialized.BitVector32;
 
 public class PlayerTurnFsmState : FsmState<BoardGameController>
 {
@@ -48,13 +47,21 @@ public class PlayerTurnFsmState : FsmState<BoardGameController>
     public override void OnLeave(FsmMgr<BoardGameController> fsm)
     {
         base.OnLeave(fsm);
-        EventMgr.Instance.Unsubscribe<PlayerDoActionEvent>(OnPlayerDoAction);
+        EventMgr.Instance?.Unsubscribe<PlayerDoActionEvent>(OnPlayerDoAction);
         ClearSelectedPieceTokenWithAnim();
     }
 
     private void OnPlayerDoAction(PlayerDoActionEvent e)
     {
-        throw new NotImplementedException();
+        var action = e.Data;
+        if (action.SeatId == m_SeatId)
+        {
+            ExecuteAIAction(action);
+        }
+        else
+        {
+            Debug.LogError($"Received action for seat {action.SeatId}, but current turn is for seat {m_SeatId}. Ignoring action.");
+        }
     }
 
     private void HandleMouseClick()
@@ -163,11 +170,11 @@ public class PlayerTurnFsmState : FsmState<BoardGameController>
 
             var data = pieceToken.OwnerPlaceTokenArea.GetPositionData();
             var sourceId = 0;
-            if(data.PositionGroup== PlaceTokenPositionGroup.Factory)
+            if (data.PositionGroup == PlaceTokenPositionGroup.Factory)
             {
-                sourceId = data.Column;
+                sourceId = BoardGameUtility.GetFactoryIdByTokenArea(pieceToken.OwnerPlaceTokenArea as NormalPlaceTokenArea);
             }
-            if(data.PositionGroup == PlaceTokenPositionGroup.MidTable)
+            else if (data.PositionGroup == PlaceTokenPositionGroup.MidTable)
             {
                 sourceId = GameStatic.MidTableRowId;
             }
@@ -188,7 +195,7 @@ public class PlayerTurnFsmState : FsmState<BoardGameController>
             var sourceId = 0;
             if (data.PositionGroup == PlaceTokenPositionGroup.Factory)
             {
-                sourceId = data.Column;
+                sourceId = BoardGameUtility.GetFactoryIdByTokenArea(pieceToken.OwnerPlaceTokenArea as NormalPlaceTokenArea);
             }
             if (data.PositionGroup == PlaceTokenPositionGroup.MidTable)
             {

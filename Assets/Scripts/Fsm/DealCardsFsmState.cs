@@ -14,11 +14,13 @@ public class DealCardsFsmState : FsmState<BoardGameController>
     {
         base.OnEnter(fsm, data);
 
-        EventMgr.Instance.Subscribe<DealCardCompleteEvent>(OnDealCardComplete);
+        EventMgr.Instance?.Subscribe<DealCardCompleteEvent>(OnDealCardComplete);
 
         m_Flag = false;
         if(data != null)
             m_FirstDealCard =(bool)data;
+        else
+            m_FirstDealCard = true;
         Debug.Log($"进入了DealCardsFsmState状态--FirstDealCard={m_FirstDealCard}");
     }
 
@@ -39,7 +41,7 @@ public class DealCardsFsmState : FsmState<BoardGameController>
     {
         base.OnLeave(fsm);
 
-        EventMgr.Instance.Unsubscribe<DealCardCompleteEvent>(OnDealCardComplete);
+        EventMgr.Instance?.Unsubscribe<DealCardCompleteEvent>(OnDealCardComplete);
     }
 
     private void OnDealCardComplete(DealCardCompleteEvent e)

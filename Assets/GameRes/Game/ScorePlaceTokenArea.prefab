@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 6526058407334977185}
   - component: {fileID: 8371467801843553523}
   - component: {fileID: 8286344207154895055}
-  - component: {fileID: 8655439297337772015}
+  - component: {fileID: 8157624430981241336}
   m_Layer: 0
   m_Name: ScorePlaceTokenArea
   m_TagString: Untagged
@@ -107,7 +107,7 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
---- !u!114 &8655439297337772015
+--- !u!114 &8157624430981241336
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -119,9 +119,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 24868c28acde59541ad99129b2147b09, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  token: {fileID: 0}
-  positionGroup: 5
-  camp: 0
-  Row: 0
-  Column: 0
-  score: 0
+  m_Row: 0
+  m_Column: 0
+  m_PositionGroup: 0
+  m_SeatId: 0
+  m_Token: {fileID: 0}

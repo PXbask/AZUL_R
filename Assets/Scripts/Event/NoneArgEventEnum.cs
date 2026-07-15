@@ -6,4 +6,5 @@ public enum NoneArgEventEnum : int
 {
     None = 0,
     PlayerStateChangeEvent,
+    GameReset,
 }

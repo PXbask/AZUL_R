@@ -424,7 +424,7 @@ MonoBehaviour:
   m_ScrollSpeed: 10
   m_MinOrthoSize: 1
   m_MaxOrthoSize: 20
-  m_RotationSpeed: 400
+  m_RotationSpeed: 1000
   m_MinPitch: -80
   m_MaxPitch: 80
 --- !u!114 &7145603374662253871

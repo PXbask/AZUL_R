@@ -19,24 +19,65 @@ public class GameStepSettleFsmState : FsmState<BoardGameController>
         m_Owner = fsm.Owner;
     }
 
+    public override void OnEnter(FsmMgr<BoardGameController> fsm, object data = null)
+    {
+        base.OnEnter(fsm, data);
+
+        m_Flag = false;
+        m_Owner = fsm.Owner;
+    }
+
     public override void OnUpdate(FsmMgr<BoardGameController> fsm)
     {
         base.OnUpdate(fsm);
+
         if (!m_Flag)
         {
             m_Flag = true;
 
-            MoveFilledRowInManualAreaToColoredArea();
-            MoveLoseAreaTokensToBag();
-            //此处应有加分动画
+            //获取各玩家分数
+            Dictionary<int, int> playerScores = new Dictionary<int, int>();
+            for (int i = 0; i < GameMgr.Instance.LobbyConfig.TotalPlayerNum; i++)
+            {
+                var player = m_Owner.GetBoardGamePlayerBySeatId(i);
+                var board = player.PlayerBoard;
+                if (board == null)
+                {
+                    Debug.LogError($"PlayerBoard is null for camp: {i}");
+                    return;
+                }
+                playerScores[i] = board.Score;
+            }
 
+            //结算阶段，先将手动区的满行移动到颜色区，然后计算分数
+            MoveFilledRowInManualAreaToColoredArea();
+            //再将减分区的棋子放回棋袋
+            MoveLoseAreaTokensToBag();
+
+            //此处应有加分动画
+            for (int i = 0; i < GameMgr.Instance.LobbyConfig.TotalPlayerNum; i++)
+            {
+                var player = m_Owner.GetBoardGamePlayerBySeatId(i);
+                var board = player.PlayerBoard;
+                if (board == null)
+                {
+                    Debug.LogError($"PlayerBoard is null for camp: {i}");
+                    return;
+                }
+                int fromScore = playerScores[i];
+                int toScore = board.Score;
+                if (toScore > fromScore)
+                {
+                    board.PlayAddScoreAnim(fromScore, toScore);
+                }
+            }
 
             if (NetworkManager.Singleton.IsHost)
             {
                 bool matchGameOverCondition = BoardGameUtility.ExistColoredAreaRowFullFilled();
                 if (matchGameOverCondition)
                 {
-                    //ChangeState<ProcedureGameFinalSettle>(procedureOwner);
+                    fsm.ChangeState<FinalSettleFsmState>();
                 }
                 else
                 {
@@ -74,10 +115,10 @@ public class GameStepSettleFsmState : FsmState<BoardGameController>
                         m_Owner.FirstPlayerSeatId = i;
                         m_Owner.RoundNum = 0;
 
-                        var midArea = BoardGameUtility.GetEmptyTokenAreaInMidArea(1);
-                        if (midArea.Count > 0)
+                        var midArea = BoardGameUtility.GetEmptyTokenAreaInMidArea();
+                        if (midArea != null)
                         {
-                            midArea[0].PlaceToken(loseArea.Token);
+                            midArea.PlaceToken(loseArea.Token);
                             loseArea.RemoveToken();
                         }
                     }
@@ -91,6 +132,9 @@ public class GameStepSettleFsmState : FsmState<BoardGameController>
         }
     }
 
+    /// <summary>
+    /// 结算阶段，先将手动区的满行移动到颜色区，然后计算分数
+    /// </summary>
     private void MoveFilledRowInManualAreaToColoredArea()
     {
         for (int i = 0; i < GameMgr.Instance.LobbyConfig.TotalPlayerNum; i++)

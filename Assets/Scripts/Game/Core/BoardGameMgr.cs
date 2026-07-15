@@ -4,7 +4,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Xml;
 using Unity.Netcode;
-using UnityEditor.PackageManager;
 using UnityEngine;
 
 public class BoardGameMgr : MonoSingleton<BoardGameMgr>
@@ -32,6 +31,7 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
     private void Start()
     {
         EventMgr.Instance.Subscribe<NgoLoadSceneCompleteEvent>(OnNgoLoadSceneComplete);
+        EventMgr.Instance.Subscribe<ShowSettlePanelEvent>(OnShowSettlePanelEvent);
     }
 
     protected override void OnDestroy()
@@ -40,7 +40,13 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
         if (EventMgr.Instance)
         {
             EventMgr.Instance.Unsubscribe<NgoLoadSceneCompleteEvent>(OnNgoLoadSceneComplete);
+            EventMgr.Instance.Unsubscribe<ShowSettlePanelEvent>(OnShowSettlePanelEvent);
         }
+    }
+
+    public void GameReset()
+    {
+        GameController.ResetGame();
     }
 
     private void OnNgoLoadSceneComplete(NgoLoadSceneCompleteEvent e)
@@ -80,6 +86,11 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
                 HostLeaveBoardGameScene();
             }
         }
+    }
+
+    private void OnShowSettlePanelEvent(ShowSettlePanelEvent e)
+    {
+        UIMgr.Instance.ShowPanel(UIStatic.SettlePanelName, e.PlayerDatas);
     }
 
     private void HostEnterBoardGameScene()
@@ -188,7 +199,7 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
         for (int i = 0; i < diskNum; i++)
         {
             var disk = PoolMgr.Instance.Spawn<FactoryDisk>(diskTrans);
-            disk.Init();
+            disk.Init(i);
             var degreePiece = 360f / diskNum;
             Vector3 pos = new
                 (0.35f * Mathf.Cos(Mathf.Deg2Rad * i * degreePiece),
@@ -210,9 +221,19 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
         return 2 * num + 1;
     }
 
-    public void SpawnAllPieceTokens(int[] factoryData, int cols)
+    public void SpawnFactoryDiskPieceTokens(int[] factoryData, int cols)
     {
-        GameController.SpawnAllPieceTokens(factoryData, cols);
+        GameController.SpawnFactoryDiskPieceTokens(factoryData, cols);
+    }
+
+    public void SpawnFirstToken()
+    {
+        GameController.SpawnFirstToken();
+    }
+
+    public void SpawnScorePieceToken()
+    {
+        GameController.SpawnScorePieceToken();
     }
 
     public void SetCurrentPlayerTurn(int seatId)
@@ -235,5 +256,10 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
 
         Debug.Log($"Host received Action:Action: {data}");
         NgoMgr.Instance.DoActionClientRpc(data);
+    }
+
+    public void ChangeStepSettleState()
+    {
+        m_GameController.ChangeState<GameStepSettleFsmState>(null);
     }
 }
