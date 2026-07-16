@@ -63,6 +63,7 @@ public class BoardGameController : MonoBehaviour
         foreach (var item in GameTables)
         {
             GameTableDic.Add(item.GameId, item);
+            item.Init();
         }
 
         ResetRound();

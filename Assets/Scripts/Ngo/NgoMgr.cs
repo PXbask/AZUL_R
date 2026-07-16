@@ -289,7 +289,7 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
     [ClientRpc]
     public void ShowPopupContentClientRpc(string content)
     {
-        UIMgr.Instance.ShowPopup(UIStatic.PopupPanelName, content);
+        UIMgr.Instance.ShowDefaultPopup(content);
     }
 
     [ClientRpc]

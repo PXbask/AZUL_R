@@ -260,5 +260,10 @@ public class UIMgr : MonoSingleton<UIMgr>
     }
 
     #endregion
+
+    public void ShowDefaultPopup(string message)
+    {
+        ShowPopup(UIStatic.PopupPanelName, message);
+    }
 }
 

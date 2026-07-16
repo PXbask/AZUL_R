@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 7077128977818103863}
   - component: {fileID: 2918793527233917352}
   - component: {fileID: 4193637810822988261}
+  - component: {fileID: -7476534225121603091}
   m_Layer: 0
   m_Name: GameTable
   m_TagString: Untagged
@@ -123,6 +124,22 @@ MonoBehaviour:
   GameId: 0
   SeatTrans: {fileID: 4119347852786649719}
   BoardTrans: {fileID: 1359792972450843359}
+  DataBinding: {fileID: -7476534225121603091}
+--- !u!114 &-7476534225121603091
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2946472836984457678}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 209f23addc908544abaf46112dea462c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_SelfMat: {fileID: 2100000, guid: 9977b8e13d72f494d9ed7e2eb2f19087, type: 2}
+  m_OppoMat: {fileID: 2100000, guid: b8ad12d16b777494492a186eb6132138, type: 2}
+  m_NoneMat: {fileID: 2100000, guid: e35ba8099b63ff746b0f37bc3dbfa476, type: 2}
 --- !u!1 &6462430294308007089
 GameObject:
   m_ObjectHideFlags: 0

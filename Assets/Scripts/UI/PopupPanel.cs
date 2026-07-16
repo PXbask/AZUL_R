@@ -17,8 +17,14 @@ public class PopupPanel : UIPanel
     private TextMeshProUGUI TipText;
 
     private Sequence m_ShowSequence = null;
+    private float m_OriginAlpha = 0;
 
     public override string PoolKey => nameof(PopupPanel);
+
+    public void Awake()
+    {
+        m_OriginAlpha = BgImage.color.a;
+    }
     public override void OnShow(object data)
     {
         base.OnShow(data);
@@ -29,6 +35,7 @@ public class PopupPanel : UIPanel
         {
             TipText.text = content;
         }
+        BgImage.color = new Color(BgImage.color.r, BgImage.color.g, BgImage.color.b, m_OriginAlpha);
 
         m_ShowSequence = DOTween.Sequence();
         m_ShowSequence.AppendInterval(0.5f);

@@ -36,11 +36,17 @@ public class PlayerTurnFsmState : FsmState<BoardGameController>
     {
         base.OnUpdate(fsm);
 
-        if (m_MySeatId != m_SeatId) return;
-
         if (Input.GetMouseButtonDown(0))
         {
-            HandleMouseClick();
+            if (m_MySeatId != m_SeatId)
+            {
+                UIMgr.Instance.ShowDefaultPopup("当前不是你的回合");
+                return;
+            }
+            else
+            {
+                HandleMouseClick();
+            }
         }
     }
 
@@ -111,6 +117,7 @@ public class PlayerTurnFsmState : FsmState<BoardGameController>
                 {
                     // 点击的不是有效的放置区域，取消选中
                     Debug.Log("Invalid placement area. Deselecting piece.");
+                    UIMgr.Instance.ShowPopup(UIStatic.PopupPanelName, "无效的放置区域");
                     ClearSelectedPieceTokenWithAnim();
                 }
             }
@@ -130,6 +137,7 @@ public class PlayerTurnFsmState : FsmState<BoardGameController>
         if (m_MySeatId != targetArea.SeatId)
         {
             Debug.Log($"Cannot place piece on opponent's area. Current player: {m_MySeatId}, Target area camp: {targetArea.SeatId}");
+            UIMgr.Instance.ShowDefaultPopup("不能放在对手的区域");
             ClearSelectedPieceTokenWithAnim();
             return;
         }
@@ -137,6 +145,7 @@ public class PlayerTurnFsmState : FsmState<BoardGameController>
         if (posData.PositionGroup != PlaceTokenPositionGroup.Manual && posData.PositionGroup != PlaceTokenPositionGroup.Lose)
         {
             Debug.Log($"Cannot place piece on this area. Position group: {posData.PositionGroup}");
+            UIMgr.Instance.ShowDefaultPopup("不能放在此区域");
             ClearSelectedPieceTokenWithAnim();
             return;
         }
@@ -156,6 +165,7 @@ public class PlayerTurnFsmState : FsmState<BoardGameController>
             if (BoardGameUtility.PlayerBoardHasColorInColoredAreaInRow(playerBoard, posData.Row, (PieceColorType)pieceToken.PieceData.PieceTokenType))
             {
                 Debug.Log("Cannot place piece in manual area because the colored area in the same row already has a piece of the same color.");
+                UIMgr.Instance.ShowDefaultPopup("本行该颜色花砖已完成");
                 ClearSelectedPieceTokenWithAnim();
                 return;
             }
@@ -164,6 +174,7 @@ public class PlayerTurnFsmState : FsmState<BoardGameController>
             if (BoardGameUtility.PlayerBoardDiffColorInManualAreaInRow(playerBoard, posData.Row, (PieceColorType)pieceToken.PieceData.PieceTokenType))
             {
                 Debug.Log("Cannot place piece in manual area because the manual area in the same row has a piece of a different color.");
+                UIMgr.Instance.ShowDefaultPopup("本行已有不同颜色的花砖");
                 ClearSelectedPieceTokenWithAnim();
                 return;
             }

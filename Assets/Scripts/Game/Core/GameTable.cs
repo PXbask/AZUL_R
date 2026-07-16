@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -12,4 +13,12 @@ public class GameTable : MonoBehaviour
 
     [SerializeField]
     public Transform BoardTrans;
+
+    [SerializeField]
+    public TableDataBinding DataBinding;
+
+    public void Init()
+    {
+        DataBinding.Init(GameId);
+    }
 }
