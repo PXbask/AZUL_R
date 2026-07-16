@@ -65,16 +65,52 @@ public class BoardGameController : MonoBehaviour
             GameTableDic.Add(item.GameId, item);
         }
 
-        ResetGame();
+        ResetRound();
     }
 
-    public void ResetGame()
+    public void ResetRound()
     {
         FirstPlayerSeatId = -1;
         RoundNum = 0;
 
         //m_RemainPieceIds.Clear();
         //m_LostPieceIds.Clear();
+    }
+
+    public void GameReset()
+    {
+        //清除所有棋子
+        for(int i = 0; i < BoardGamePlayerDic.Count; i++)
+        {
+            var player = BoardGamePlayerDic[i];
+            player.PlayerBoard.ResetBoard();
+        }
+
+        for(int i = 0;i < FactoryDiskDic.Count; i++)
+        {
+            var item = FactoryDiskDic[i];
+            for (int j = 0; j < item.PlaceTokenAreas.Count; j++)
+            {
+                var area = item.GetArea(j);
+                area.ResetObject();
+            }
+        }
+
+        for (int i = 0; i < MidTablePlaceAreas.Count; i++)
+        {
+            var area = MidTablePlaceAreas[i];
+            area.ResetObject();
+        }
+
+        ResetRound();
+        GameFsm.ChangeState<IdleFsmState>();
+
+        if(NetworkManager.Singleton.IsHost)
+        {
+            //三秒后开始对局
+            NgoMgr.Instance.ShowPopupContentClientRpc("游戏马上开始");
+            EventMgr.Instance.Trigger(new StartGameFsmEvent { Interval = 3f });
+        }
     }
 
     private void InitGameFsm()
@@ -93,6 +129,8 @@ public class BoardGameController : MonoBehaviour
 
     private void InitCenterTable()
     {
+        MidTablePlaceAreas.Clear();
+
         for(int i = 0; i < CenterTrans.childCount; i++)
         {
             var trans = CenterTrans.GetChild(i);
@@ -176,7 +214,7 @@ public class BoardGameController : MonoBehaviour
             else
             {
                 BoardGamePlayerDic[player.SeatId] = player;
-                if(BoardGamePlayerDic.Count == GameMgr.Instance.LobbyConfig.TotalPlayerNum)
+                if(BoardGamePlayerDic.Count == GameMgr.Instance.LobbyConfig.TotalPlayerNum && NetworkManager.Singleton.IsHost)
                 {
                     //三秒后开始对局
                     NgoMgr.Instance.ShowPopupContentClientRpc("游戏马上开始");

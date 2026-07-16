@@ -36,7 +36,7 @@ public class SettlePanel : UIPanel
 
     private void OnClickRestartBtn()
     {
-        BoardGameMgr.Instance.GameReset();
+        NgoMgr.Instance.GameResetClientRpc();
     }
 
     private void OnClickHideBtn()

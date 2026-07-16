@@ -109,5 +109,13 @@ namespace AZUL
         {
             Token = null;
         }
+
+        public virtual void ResetObject()
+        {
+            if(IsEmpty()) return;
+
+            PoolMgr.Instance.Recycle(Token as PieceTokenBase);
+            RemoveToken();
+        }
     }
 }

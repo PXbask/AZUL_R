@@ -46,7 +46,27 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
 
     public void GameReset()
     {
-        GameController.ResetGame();
+        GameController.GameReset();
+        ResetAllPlayerControllerTrans();
+    }
+
+    private void ResetAllPlayerControllerTrans()
+    {
+        //玩家物体回到对应位置
+        if (NetworkManager.Singleton.IsHost)
+        {
+            var players = PlayerMgr.Instance.GetAllPlayers();
+            foreach (var player in players)
+            {
+                var pc = PlayerController.Get((ulong)player.ClientId);
+                if (pc)
+                {
+                    int gameId = PlayerMgr.Instance.GetGameIdByClientId(player.ClientId);
+                    var seatTrans = GetSeatTransByGameId(gameId);
+                    pc.transform.SetPositionAndRotation(seatTrans.position, seatTrans.rotation);
+                }
+            }
+        }
     }
 
     private void OnNgoLoadSceneComplete(NgoLoadSceneCompleteEvent e)

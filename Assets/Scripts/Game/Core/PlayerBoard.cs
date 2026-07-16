@@ -122,6 +122,35 @@ namespace AZUL
             }
         }
 
+        public void ResetBoard()
+        {
+            Score = 0;
+            ScorePieceToken = null;
+
+            for (int i = 0; i < ScorePlaceTokenAreas.Count; i++)
+            {
+                ScorePlaceTokenAreas[i].ResetObject();
+            }
+            for (int i = 0; i < LeftPlaceTokenAreas.Count; i++)
+            {
+                for (int j = 0; j < LeftPlaceTokenAreas[i].Count; j++)
+                {
+                    LeftPlaceTokenAreas[i][j].ResetObject();
+                }
+            }
+            for (int i = 0; i < RightPlaceTokenAreas.Count; i++)
+            {
+                for (int j = 0; j < RightPlaceTokenAreas[i].Count; j++)
+                {
+                    RightPlaceTokenAreas[i][j].ResetObject();
+                }
+            }
+            for (int i = 0; i < LosePlaceTokenAreas.Count; i++)
+            {
+                LosePlaceTokenAreas[i].ResetObject();
+            }
+        }
+
         public void BindScoreToken(ScorePieceToken scoreToken)
         {
             ScorePieceToken = scoreToken;

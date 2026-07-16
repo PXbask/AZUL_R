@@ -335,11 +335,12 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
         BoardGameMgr.Instance.ChangeStepSettleState();
     }
 
-    //[ClientRpc]
-    //public void FsmChangeState<T>(object data) where T : FsmState<BoardGameController>
-    //{
-    //    BoardGameMgr.Instance.FsmChangeState<T>(data);
-    //}
+    [ClientRpc]
+    public void GameResetClientRpc()
+    {
+        UIMgr.Instance.HideAllPanels();
+        BoardGameMgr.Instance.GameReset();
+    }
 
     [ServerRpc(RequireOwnership = false)]
     public void ChangePlayerReadyStateServerRpc(int clientId, bool v)

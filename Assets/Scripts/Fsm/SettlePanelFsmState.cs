@@ -43,7 +43,6 @@ public class SettlePanelFsmState : FsmState<BoardGameController>
             {
                 winnerSeatIds.Add(winner.SeatId);
             }
-
             ntf.WinnerSeatIds = winnerSeatIds.ToArray();
             ntf.PlayerDataList = m_Owner.GetAllPlayerData();
 
