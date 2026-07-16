@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 public class SettlePanelFsmState : FsmState<BoardGameController>
@@ -26,12 +27,27 @@ public class SettlePanelFsmState : FsmState<BoardGameController>
     public override void OnUpdate(FsmMgr<BoardGameController> fsm)
     {
         base.OnUpdate(fsm);
+        if(!NetworkManager.Singleton.IsHost)
+        {
+            return;
+        }
 
         if (!m_Flag)
         {
             m_Flag = true;
 
-            NgoMgr.Instance.ShowSettlePanelClientRpc(m_Owner.GetWinner().ConvertAll(p => p.GetPlayerData()).ToArray());
+            GameResultNtf ntf;
+            var winnerList = m_Owner.GetWinner();
+            List<int> winnerSeatIds = new List<int>();
+            foreach (var winner in winnerList)
+            {
+                winnerSeatIds.Add(winner.SeatId);
+            }
+
+            ntf.WinnerSeatIds = winnerSeatIds.ToArray();
+            ntf.PlayerDataList = m_Owner.GetAllPlayerData();
+
+            NgoMgr.Instance.ShowSettlePanelClientRpc(ntf);
         }
     }
 

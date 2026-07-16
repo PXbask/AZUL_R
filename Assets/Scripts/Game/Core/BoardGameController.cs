@@ -486,4 +486,14 @@ public class BoardGameController : MonoBehaviour
         }
         return winners;
     }
+
+    public BoardGamePlayerData[] GetAllPlayerData()
+    {
+        List<BoardGamePlayerData> playerDataList = new List<BoardGamePlayerData>();
+        foreach (var player in BoardGamePlayerDic)
+        {
+            playerDataList.Add(player.Value.GetPlayerData());
+        }
+        return playerDataList.ToArray();
+    }
 }

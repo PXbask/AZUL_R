@@ -90,7 +90,7 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
 
     private void OnShowSettlePanelEvent(ShowSettlePanelEvent e)
     {
-        UIMgr.Instance.ShowPanel(UIStatic.SettlePanelName, e.PlayerDatas);
+        UIMgr.Instance.ShowPanel(UIStatic.SettlePanelName, e);
     }
 
     private void HostEnterBoardGameScene()

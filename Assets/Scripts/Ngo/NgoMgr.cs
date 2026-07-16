@@ -324,9 +324,9 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
     }
 
     [ClientRpc]
-    public void ShowSettlePanelClientRpc(BoardGamePlayerData[] playerDataArr)
+    public void ShowSettlePanelClientRpc(GameResultNtf ntf)
     {
-        EventMgr.Instance.Trigger(new ShowSettlePanelEvent { PlayerDatas = playerDataArr });
+        EventMgr.Instance.Trigger(new ShowSettlePanelEvent { ntf = ntf });
     }
 
     [ClientRpc]

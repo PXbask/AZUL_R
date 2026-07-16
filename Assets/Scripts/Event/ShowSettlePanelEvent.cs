@@ -4,5 +4,5 @@ using UnityEngine;
 
 public class ShowSettlePanelEvent : EventBase
 {
-    public BoardGamePlayerData[] PlayerDatas;
+    public GameResultNtf ntf;
 }
