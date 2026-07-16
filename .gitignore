@@ -6,6 +6,7 @@
 # See: https://github.com/github/gitignore/tree/main/Global
 #
 .utmp/
+/[Bb]in/
 /[Ll]ibrary/
 /[Tt]emp/
 /[Oo]bj/
@@ -108,3 +109,5 @@ InitTestScene*.unity*
 
 /Assets/Font/AlimamaDongFangDaKai-Regular SDF.asset
 /Assets/Font/AlimamaDongFangDaKai-Regular SDF.asset.meta
+
+/Bin.zip

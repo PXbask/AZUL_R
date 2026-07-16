@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -34,16 +34,58 @@ public class DebugConsole : MonoSingleton<DebugConsole>
     private static readonly Color ColorWarning = new Color(1f, 0.85f, 0f);
     private static readonly Color ColorError   = new Color(1f, 0.35f, 0.35f);
 
+    // Cached textures and styles to avoid allocating per-frame
+    private Texture2D _texSelected;
+    private Texture2D _texEven;
+    private Texture2D _texOdd;
+    private GUIStyle _styleSelected;
+    private GUIStyle _styleEven;
+    private GUIStyle _styleOdd;
+
     protected override void Awake()
     {
         base.Awake();
         Application.logMessageReceived += OnLogReceived;
+        CreateCachedStyles();
     }
 
     protected override void OnDestroy()
     {
-        base.OnDestroy();
         Application.logMessageReceived -= OnLogReceived;
+        DestroyCachedTextures();
+        base.OnDestroy();
+    }
+
+    private void CreateCachedStyles()
+    {
+        _texSelected = MakeTex(2, 2, new Color(0.3f, 0.5f, 1f, 0.5f));
+        _texEven     = MakeTex(2, 2, new Color(0.2f, 0.2f, 0.2f, 0.8f));
+        _texOdd      = MakeTex(2, 2, new Color(0.15f, 0.15f, 0.15f, 0.8f));
+
+        _styleSelected = new GUIStyle(GUI.skin.box) { alignment = TextAnchor.MiddleLeft, wordWrap = false };
+        _styleEven     = new GUIStyle(GUI.skin.box) { alignment = TextAnchor.MiddleLeft, wordWrap = false };
+        _styleOdd      = new GUIStyle(GUI.skin.box) { alignment = TextAnchor.MiddleLeft, wordWrap = false };
+
+        _styleSelected.normal.background = _texSelected;
+        _styleEven.normal.background     = _texEven;
+        _styleOdd.normal.background      = _texOdd;
+    }
+
+    private void DestroyCachedTextures()
+    {
+        void DestroySafe(UnityEngine.Object o)
+        {
+            if (o == null) return;
+            if (Application.isPlaying) Destroy(o);
+            else DestroyImmediate(o);
+        }
+
+        DestroySafe(_texSelected);
+        DestroySafe(_texEven);
+        DestroySafe(_texOdd);
+
+        _texSelected = _texEven = _texOdd = null;
+        _styleSelected = _styleEven = _styleOdd = null;
     }
 
     private void OnLogReceived(string message, string stackTrace, LogType type)
@@ -78,8 +120,7 @@ public class DebugConsole : MonoSingleton<DebugConsole>
         float logHeight   = _windowRect.height - 50f - stackHeight;
 
         // Log list
-        _logScrollPos = GUILayout.BeginScrollView(_logScrollPos,
-            GUILayout.Height(logHeight));
+        _logScrollPos = GUILayout.BeginScrollView(_logScrollPos, GUILayout.Height(logHeight));
 
         for (int i = 0; i < _logs.Count; i++)
         {
@@ -106,8 +147,7 @@ public class DebugConsole : MonoSingleton<DebugConsole>
         if (_showStack && _selectedIndex >= 0 && _selectedIndex < _logs.Count)
         {
             GUILayout.Box("", GUILayout.Height(1), GUILayout.ExpandWidth(true));
-            _stackScrollPos = GUILayout.BeginScrollView(_stackScrollPos,
-                GUILayout.Height(stackHeight));
+            _stackScrollPos = GUILayout.BeginScrollView(_stackScrollPos, GUILayout.Height(stackHeight));
             GUILayout.Label(_logs[_selectedIndex].stackTrace);
             GUILayout.EndScrollView();
         }
@@ -144,8 +184,8 @@ public class DebugConsole : MonoSingleton<DebugConsole>
         int logCount  = 0, warnCount = 0, errCount = 0;
         foreach (var e in _logs)
         {
-            if (e.type == LogType.Log)                              logCount++;
-            else if (e.type == LogType.Warning)                     warnCount++;
+            if (e.type == LogType.Log) logCount++;
+            else if (e.type == LogType.Warning) warnCount++;
             else if (e.type == LogType.Error || e.type == LogType.Exception) errCount++;
         }
         GUILayout.Label($"Log:{logCount}  Warn:{warnCount}  Err:{errCount}");
@@ -192,24 +232,19 @@ public class DebugConsole : MonoSingleton<DebugConsole>
 
     private GUIStyle GetStyle(int index)
     {
-        GUIStyle style = new GUIStyle(GUI.skin.box);
-        style.alignment = TextAnchor.MiddleLeft;
-        style.wordWrap  = false;
-        style.normal.background = index == _selectedIndex
-            ? MakeTex(2, 2, new Color(0.3f, 0.5f, 1f, 0.5f))
-            : (index % 2 == 0
-                ? MakeTex(2, 2, new Color(0.2f, 0.2f, 0.2f, 0.8f))
-                : MakeTex(2, 2, new Color(0.15f, 0.15f, 0.15f, 0.8f)));
-        return style;
+        if (_styleSelected == null) CreateCachedStyles();
+        if (index == _selectedIndex) return _styleSelected;
+        return (index % 2 == 0) ? _styleEven : _styleOdd;
     }
 
     private Texture2D MakeTex(int width, int height, Color color)
     {
         Color[] pix = new Color[width * height];
         for (int i = 0; i < pix.Length; i++) pix[i] = color;
-        Texture2D tex = new Texture2D(width, height);
+        Texture2D tex = new Texture2D(width, height, TextureFormat.ARGB32, false);
         tex.SetPixels(pix);
         tex.Apply();
+        tex.hideFlags = HideFlags.HideAndDontSave;
         return tex;
     }
 

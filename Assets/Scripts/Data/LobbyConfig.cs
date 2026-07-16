@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Xml.Linq;
 using Unity.Netcode;
-using UnityEditor.PackageManager;
 using UnityEngine;
 
 public struct LobbyConfig : INetworkSerializable
