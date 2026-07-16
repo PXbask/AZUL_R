@@ -250,11 +250,11 @@ public class BoardGameController : MonoBehaviour
             for(int j = 0; j < tmpList.Count; j++)
             {
                 // 如果 tmpList 可能小于 cols，使用 -1 作为空槽
-                int val = (j < tmpList.Count) ? tmpList[j] : -1;
+                int val = tmpList[j];
                 factoryData[i * cols + j] = val;
             }
         }
-        NgoMgr.Instance.SpawnFactoryDiskPieceTokensClientRpc(factoryData, cols);
+        NgoMgr.Instance.SpawnFactoryDiskPieceTokensClientRpc(factoryData, cols, reset);
     }
 
     /// <summary>
@@ -264,11 +264,26 @@ public class BoardGameController : MonoBehaviour
     /// <returns>随机抽取的子列表</returns>
     private List<int> TakeRandomPieces(int count)
     {
+        List<int> result = new List<int>();
+        TakeRandomPiecesInternal(count, 0, result);
+
+        return result;
+    }
+
+    private void TakeRandomPiecesInternal(int count, int startIndex, List<int> result)
+    {
+        if(m_RemainPieceIds.Count == 0 && m_LostPieceIds.Count == 0)
+        {
+            for (int i = startIndex; i < count; i++)
+            {
+                result.Add(GameStatic.NullPieceId);
+            }
+            return;
+        }
+
         // 如果请求数量超过剩余数量，则只取剩余的全部
-        int actualCount = Mathf.Min(count, m_RemainPieceIds.Count);
-
-        List<int> result = new List<int>(actualCount);
-
+        int neededCount = count - startIndex;
+        int actualCount = Mathf.Min(neededCount, m_RemainPieceIds.Count);
         // 随机抽取 n 次
         for (int i = 0; i < actualCount; i++)
         {
@@ -276,8 +291,20 @@ public class BoardGameController : MonoBehaviour
             result.Add(m_RemainPieceIds[randomIndex]);
             m_RemainPieceIds.RemoveAt(randomIndex);
         }
+        if (neededCount > actualCount)
+        {
+            //需要从弃牌区中补充
+            PutAllLoseToRemain();
+            //补充剩余数量
+            TakeRandomPiecesInternal(count, startIndex + actualCount, result);  
+        }
+    }
 
-        return result;
+    private void PutAllLoseToRemain()
+    {
+        m_RemainPieceIds.AddRange(m_LostPieceIds);
+        m_LostPieceIds.Clear();
+        Debug.Log("PutAllLoseToRemain: 将弃牌区的棋子放回剩余棋子区");
     }
 
     public void SpawnFirstToken()
@@ -286,12 +313,12 @@ public class BoardGameController : MonoBehaviour
         SpawnNormalPieceToArea(0, BoardGameUtility.GetEmptyTokenAreaInMidArea());
     }
 
-    public void SpawnFactoryDiskPieceTokens(int[] factoryData, int cols)
+    public void SpawnFactoryDiskPieceTokens(int[] factoryData, int cols, bool reset)
     {
         //因为主机已经变为DealCardsFsmState状态，所以客户端需要自己切换状态
         if (!NetworkManager.Singleton.IsHost)
         {
-            GameFsm.ChangeState<DealCardsFsmState>();
+            GameFsm.ChangeState<DealCardsFsmState>(reset);
         }
         if (factoryData == null)
         {
@@ -344,6 +371,7 @@ public class BoardGameController : MonoBehaviour
 
         if (MidFactoryAreaEmpty())
         {
+            Debug.Log("主机检测到中间区域和工厂圆盘都为空，进入结算阶段");
             NgoMgr.Instance.ChangeStepSettleStateClientRpc();
             return;
         }
@@ -395,10 +423,13 @@ public class BoardGameController : MonoBehaviour
 
     private void SpawnNormalPieceToArea(int pieceId, IPlaceTokenArea area)
     {
-        NormalPieceToken token = PoolMgr.Instance.Spawn<NormalPieceToken>();
-        token.Init(pieceId);
-        token.transform.position = PieceBagTrans.position;
-        area.PlaceToken(token);
+        if(pieceId != GameStatic.NullPieceId)
+        {
+            NormalPieceToken token = PoolMgr.Instance.Spawn<NormalPieceToken>();
+            token.Init(pieceId);
+            token.transform.position = PieceBagTrans.position;
+            area.PlaceToken(token);
+        }
     }
 
     public void AddLosePiece(int pieceId)

@@ -293,9 +293,9 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
     }
 
     [ClientRpc]
-    public void SpawnFactoryDiskPieceTokensClientRpc(int[] factoryData, int cols)
+    public void SpawnFactoryDiskPieceTokensClientRpc(int[] factoryData, int cols, bool reset)
     {
-        BoardGameMgr.Instance.SpawnFactoryDiskPieceTokens(factoryData, cols);
+        BoardGameMgr.Instance.SpawnFactoryDiskPieceTokens(factoryData, cols, reset);
     }
 
     [ClientRpc]

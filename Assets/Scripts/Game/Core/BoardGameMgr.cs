@@ -221,9 +221,9 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
         return 2 * num + 1;
     }
 
-    public void SpawnFactoryDiskPieceTokens(int[] factoryData, int cols)
+    public void SpawnFactoryDiskPieceTokens(int[] factoryData, int cols, bool reset)
     {
-        GameController.SpawnFactoryDiskPieceTokens(factoryData, cols);
+        GameController.SpawnFactoryDiskPieceTokens(factoryData, cols, reset);
     }
 
     public void SpawnFirstToken()

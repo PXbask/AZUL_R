@@ -25,6 +25,8 @@ public class GameStepSettleFsmState : FsmState<BoardGameController>
 
         m_Flag = false;
         m_Owner = fsm.Owner;
+
+        Debug.Log("进入了GameStepSettleFsmState");
     }
 
     public override void OnUpdate(FsmMgr<BoardGameController> fsm)
@@ -34,7 +36,7 @@ public class GameStepSettleFsmState : FsmState<BoardGameController>
         if (!m_Flag)
         {
             m_Flag = true;
-
+            Debug.Log($"--TotalPlayerNum={GameMgr.Instance.LobbyConfig.TotalPlayerNum}");
             //获取各玩家分数
             Dictionary<int, int> playerScores = new Dictionary<int, int>();
             for (int i = 0; i < GameMgr.Instance.LobbyConfig.TotalPlayerNum; i++)

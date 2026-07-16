@@ -19,4 +19,6 @@ public static class GameStatic
     public static readonly int NonePlayerSeatId = -1;
     public static readonly int MidTableRowId = -1;
     public static readonly int LoseAreaRowId = -1;
+
+    public static readonly int NullPieceId = -1;
 }
