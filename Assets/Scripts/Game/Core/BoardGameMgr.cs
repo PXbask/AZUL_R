@@ -71,6 +71,7 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
 
     private void OnNgoLoadSceneComplete(NgoLoadSceneCompleteEvent e)
     {
+        _ = GameController; //确保GameController已初始化
         if (!NetworkManager.Singleton.IsHost) return;
 
         if(e.SceneName == SceneStatic.GameSceneName)
@@ -231,11 +232,6 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
         }
     }
 
-    public void FsmChangeState<T>(object data) where T : FsmState<BoardGameController>
-    {
-        GameController.ChangeState<T>(data);
-    }
-
     private int GetFactoryDisksByPlayerNum(int num)
     {
         return 2 * num + 1;
@@ -276,10 +272,5 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
 
         Debug.Log($"Host received Action:Action: {data}");
         NgoMgr.Instance.DoActionClientRpc(data);
-    }
-
-    public void ChangeStepSettleState()
-    {
-        m_GameController.ChangeState<GameStepSettleFsmState>(null);
     }
 }

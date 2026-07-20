@@ -269,6 +269,20 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
     }
 
     [ClientRpc]
+    public void FsmChangeStateClientRpc(FsmStateType stateType, int data = 0)
+    {
+        Debug.Log("触发FsmChangeStateEvent事件");
+        EventMgr.Instance?.Trigger(new FsmChangeStateEvent { stateType = stateType, data = data });
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    public void NotifyHostFsmSyncServerRpc(FsmStateType stateType)
+    {
+        if (!NetworkManager.Singleton.IsHost) return;
+        EventMgr.Instance?.Trigger(NoneArgEventEnum.FsmSyncEvent);
+    }
+
+    [ClientRpc]
     public void UpdateLobbyPlayerDataClientRpc(PlayerData[] arr, LobbyConfig lobbyConfig)
     {
         PlayerMgr.Instance.UpdateConnectedPlayerData(arr, lobbyConfig);
@@ -327,12 +341,6 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
     public void ShowSettlePanelClientRpc(GameResultNtf ntf)
     {
         EventMgr.Instance.Trigger(new ShowSettlePanelEvent { ntf = ntf });
-    }
-
-    [ClientRpc]
-    public void ChangeStepSettleStateClientRpc()
-    {
-        BoardGameMgr.Instance.ChangeStepSettleState();
     }
 
     [ClientRpc]

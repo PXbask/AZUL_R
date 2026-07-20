@@ -104,28 +104,35 @@ public class BoardGameController : MonoBehaviour
         }
 
         ResetRound();
-        GameFsm.ChangeState<IdleFsmState>();
+        GameFsm.HostChangeState(FsmStateType.Idle);
 
-        if(NetworkManager.Singleton.IsHost)
+        if (NetworkManager.Singleton.IsHost)
         {
             //三秒后开始对局
             NgoMgr.Instance.ShowPopupContentClientRpc("游戏马上开始");
-            EventMgr.Instance.Trigger(new StartGameFsmEvent { Interval = 3f });
+            DOVirtual.DelayedCall(3f, () =>
+            {
+                GameFsm.HostChangeState(FsmStateType.SelectFirstPlayer);
+            });
         }
     }
 
     private void InitGameFsm()
     {
         GameFsm = new FsmMgr<BoardGameController>(this);
-        GameFsm.AddState<IdleFsmState>();
-        GameFsm.AddState<SelectFirstPlayerFsmState>();
-        GameFsm.AddState<DealCardsFsmState>();
-        GameFsm.AddState<PlayerTurnFsmState>();
-        GameFsm.AddState<GameStepSettleFsmState>();
-        GameFsm.AddState<FinalSettleFsmState>();
-        GameFsm.AddState<SettlePanelFsmState>();
+        GameFsm.AddState(FsmStateType.Idle, new IdleFsmState());
+        GameFsm.AddState(FsmStateType.SelectFirstPlayer, new SelectFirstPlayerFsmState());
+        GameFsm.AddState(FsmStateType.DealCards, new DealCardsFsmState());
+        GameFsm.AddState(FsmStateType.PlayerTurn, new PlayerTurnFsmState());
+        GameFsm.AddState(FsmStateType.GameStepSettle, new GameStepSettleFsmState());
+        GameFsm.AddState(FsmStateType.FinalSettle, new FinalSettleFsmState());
+        GameFsm.AddState(FsmStateType.SettlePanel, new SettlePanelFsmState());
 
-        GameFsm.ChangeState<IdleFsmState>();
+        DOVirtual.DelayedCall(2f, () =>
+        {
+            GameFsm.HostChangeState(FsmStateType.Idle);
+        });
+
     }
 
     private void InitCenterTable()
@@ -144,11 +151,6 @@ public class BoardGameController : MonoBehaviour
             area.Init(0, i, PlaceTokenPositionGroup.MidTable, GameStatic.NonePlayerSeatId);
             MidTablePlaceAreas.Add(i, area);
         }
-    }
-
-    public void ChangeState<T>(object data) where T : FsmState<BoardGameController>
-    {
-        GameFsm.ChangeState<T>(data);
     }
 
     private void Update()
@@ -219,7 +221,10 @@ public class BoardGameController : MonoBehaviour
                 {
                     //三秒后开始对局
                     NgoMgr.Instance.ShowPopupContentClientRpc("游戏马上开始");
-                    EventMgr.Instance.Trigger(new StartGameFsmEvent { Interval = 3f });
+                    DOVirtual.DelayedCall(3f, () =>
+                    {
+                        GameFsm.HostChangeState(FsmStateType.SelectFirstPlayer);
+                    });
                 }
             }
         }
@@ -354,11 +359,6 @@ public class BoardGameController : MonoBehaviour
 
     public void SpawnFactoryDiskPieceTokens(int[] factoryData, int cols, bool reset)
     {
-        //因为主机已经变为DealCardsFsmState状态，所以客户端需要自己切换状态
-        if (!NetworkManager.Singleton.IsHost)
-        {
-            GameFsm.ChangeState<DealCardsFsmState>(reset);
-        }
         if (factoryData == null)
         {
             Debug.LogError("SpawnAllPieceTokens: flatFactoryData is null");
@@ -411,7 +411,7 @@ public class BoardGameController : MonoBehaviour
         if (MidFactoryAreaEmpty())
         {
             Debug.Log("主机检测到中间区域和工厂圆盘都为空，进入结算阶段");
-            NgoMgr.Instance.ChangeStepSettleStateClientRpc();
+            GameFsm.HostChangeState(FsmStateType.GameStepSettle);
             return;
         }
 
@@ -434,7 +434,7 @@ public class BoardGameController : MonoBehaviour
     {
         Debug.Log($"SetCurrentPlayerTurn: seatId={seatId}");
 
-        GameFsm.ChangeState<PlayerTurnFsmState>(seatId);
+        GameFsm.HostChangeState(FsmStateType.PlayerTurn, seatId);
         CurrentPlayerSeatId = seatId;
     }
 

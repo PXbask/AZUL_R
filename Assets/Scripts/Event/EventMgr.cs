@@ -80,6 +80,8 @@ public class EventMgr : MonoSingleton<EventMgr>
         {
             ((Action<T>)d)?.Invoke(evt);
         }
+
+        Debug.Log($"触发事件:{evt.GetType().Name}");
     }
 
     public void Trigger(NoneArgEventEnum evt)

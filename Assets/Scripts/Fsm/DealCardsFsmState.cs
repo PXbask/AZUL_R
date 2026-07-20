@@ -18,7 +18,7 @@ public class DealCardsFsmState : FsmState<BoardGameController>
 
         m_Flag = false;
         if(data != null)
-            m_FirstDealCard =(bool)data;
+            m_FirstDealCard = (int)data != 0;
         else
             m_FirstDealCard = true;
         Debug.Log($"进入了DealCardsFsmState状态--FirstDealCard={m_FirstDealCard}");

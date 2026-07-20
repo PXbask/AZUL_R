@@ -1,8 +1,16 @@
-﻿public abstract class FsmState<T> : IFsmState<T>
+﻿using UnityEngine;
+
+public abstract class FsmState<T> : IFsmState<T>
 {
     public virtual void OnInit(FsmMgr<T> fsm) { }
-    public virtual void OnEnter(FsmMgr<T> fsm, object data = null) { }
+    public virtual void OnEnter(FsmMgr<T> fsm, object data = null)
+    {
+        Debug.Log($"进入状态: {this.GetType().Name}");
+    }
     public virtual void OnUpdate(FsmMgr<T> fsm) { }
-    public virtual void OnLeave(FsmMgr<T> fsm) { }
+    public virtual void OnLeave(FsmMgr<T> fsm)
+    {
+        Debug.Log($"离开状态: {this.GetType().Name}");
+    }
     public virtual void OnRelease(FsmMgr<T> fsm) { }
 }

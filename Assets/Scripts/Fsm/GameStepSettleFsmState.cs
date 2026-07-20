@@ -88,12 +88,12 @@ public class GameStepSettleFsmState : FsmState<BoardGameController>
             bool matchGameOverCondition = BoardGameUtility.ExistColoredAreaRowFullFilled();
             if (matchGameOverCondition)
             {
-                fsm.ChangeState<FinalSettleFsmState>();
+                fsm.HostChangeState(FsmStateType.FinalSettle);
             }
             else
             {
                 //重新发牌
-                fsm.ChangeState<DealCardsFsmState>(false);
+                fsm.HostChangeState(FsmStateType.DealCards);
             }
         });
     }

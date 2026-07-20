@@ -1,44 +1,111 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
+using Cysharp.Threading.Tasks;
+using System.Threading;
+
+public enum FsmStateType
+{
+    Idle,
+    SelectFirstPlayer,
+    DealCards,
+    PlayerTurn,
+    GameStepSettle,
+    FinalSettle,
+    SettlePanel,
+}
 
 public class FsmMgr<TOwner>
 {
-    private readonly Dictionary<Type, IFsmState<TOwner>> _states = new Dictionary<Type, IFsmState<TOwner>>();
-    private IFsmState<TOwner> _currentState;
+    private readonly Dictionary<FsmStateType, IFsmState<TOwner>> _states = new Dictionary<FsmStateType, IFsmState<TOwner>>();
 
+    /// <summary>
+    /// 当前状态
+    /// </summary>
+    private IFsmState<TOwner> _currentState;
     public IFsmState<TOwner> CurrentState => _currentState;
 
+    /// <summary>
+    /// 上一个状态完成同步的客户端数量
+    /// </summary>
+    private int m_SyncStateDoneCount = 0;
+    private bool m_FirstChange;
+
     public TOwner Owner { get; private set; }
+
+    private CancellationTokenSource _cts;
 
     public FsmMgr(TOwner owner)
     {
         Owner = owner;
+        _cts = new CancellationTokenSource();
+
+        _currentState = null;
+        m_SyncStateDoneCount = 0;
+        m_FirstChange = true;
+
+        Debug.Log("订阅FsmChangeStateEvent和FsmSyncEvent事件");
+        EventMgr.Instance?.Subscribe<FsmChangeStateEvent>(OnFsmChangeStateEvent);
+        if (NetworkManager.Singleton.IsHost)
+        {
+            EventMgr.Instance?.Subscribe(NoneArgEventEnum.FsmSyncEvent, OnFsmSyncEvent);
+        }
+    }
+
+    ~FsmMgr()
+    {
+        EventMgr.Instance?.Unsubscribe<FsmChangeStateEvent>(OnFsmChangeStateEvent);
+        if (NetworkManager.Singleton.IsHost)
+        {
+            EventMgr.Instance?.Unsubscribe(NoneArgEventEnum.FsmSyncEvent, OnFsmSyncEvent);
+        }
+        _cts?.Cancel();
+        _cts?.Dispose();
+        _cts = null;
+    }
+
+    private void OnFsmSyncEvent()
+    {
+        if(!NetworkManager.Singleton.IsHost) return;
+
+        m_SyncStateDoneCount++;
+        if (m_SyncStateDoneCount > GameMgr.Instance.LobbyConfig.TotalPlayerNum)
+        {
+            Debug.LogWarning("[FsmMgr] SyncStateDoneCount exceeds total player number.");
+            m_SyncStateDoneCount = GameMgr.Instance.LobbyConfig.TotalPlayerNum;
+        }
+        Debug.Log($"[FsmMgr] 当前状态:{_currentState?.GetType().Name} 同步状态: {m_SyncStateDoneCount}/{GameMgr.Instance.LobbyConfig.TotalPlayerNum}");
+    }
+
+    private void OnFsmChangeStateEvent(FsmChangeStateEvent e)
+    {
+        var stateType = e.stateType;
+        ClientChangeState(stateType, e.data);
     }
 
     /// <summary>
     /// 注册状态
     /// </summary>
-    public void AddState<T>() where T : FsmState<TOwner>, new()
+    public void AddState(FsmStateType stateType, IFsmState<TOwner> state)
     {
-        Type type = typeof(T);
-        if (_states.ContainsKey(type))
+        if (_states.ContainsKey(stateType))
         {
-            Debug.LogWarning($"[FsmMgr] State {type.Name} already exists.");
+            Debug.LogWarning($"[FsmMgr] State {stateType} already exists.");
             return;
         }
-        T state = new T();
+
         state.OnInit(this);
-        _states[type] = state;
+        _states[stateType] = state;
     }
 
     /// <summary>
     /// 移除状态
     /// </summary>
-    public void RemoveState<T>() where T : FsmState<TOwner>
+    public void RemoveState(FsmStateType stateType)
     {
-        Type type = typeof(T);
-        if (_states.TryGetValue(type, out IFsmState<TOwner> state))
+        if (_states.TryGetValue(stateType, out IFsmState<TOwner> state))
         {
             if (_currentState == state)
             {
@@ -46,11 +113,11 @@ public class FsmMgr<TOwner>
                 _currentState = null;
             }
             state.OnRelease(this);
-            _states.Remove(type);
+            _states.Remove(stateType);
         }
         else
         {
-            Debug.LogWarning($"[FsmMgr] State {type.Name} not found.");
+            Debug.LogWarning($"[FsmMgr] State {stateType} not found.");
         }
     }
 
@@ -71,26 +138,52 @@ public class FsmMgr<TOwner>
     /// <summary>
     /// 切换到目标状态
     /// </summary>
-    public void ChangeState<T>(object data = null) where T : FsmState<TOwner>
+    public void ClientChangeState(FsmStateType stateType, object data = null)
     {
-        Type type = typeof(T);
-        if (!_states.TryGetValue(type, out IFsmState<TOwner> nextState))
+        if (!_states.TryGetValue(stateType, out IFsmState<TOwner> nextState))
         {
-            Debug.LogError($"[FsmMgr] State {type.Name} not registered.");
+            Debug.LogError($"[FsmMgr] State {stateType} not registered.");
             return;
         }
 
         _currentState?.OnLeave(this);
         _currentState = nextState;
         _currentState.OnEnter(this, data);
+
+        NgoMgr.Instance.NotifyHostFsmSyncServerRpc(stateType);
+    }
+
+    public void HostChangeState(FsmStateType stateType, int data = 0)
+    {
+        if(!NetworkManager.Singleton.IsHost) return;
+
+        if (!_states.TryGetValue(stateType, out IFsmState<TOwner> nextState))
+        {
+            Debug.LogError($"[FsmMgr] State {stateType} not registered.");
+            return;
+        }
+
+        WaitForAllClientState(stateType, data, _cts.Token).Forget();
+    }
+
+    private async UniTask WaitForAllClientState(FsmStateType stateType, int data, CancellationToken ct)
+    {
+        bool allClientDone = m_SyncStateDoneCount >= GameMgr.Instance.LobbyConfig.TotalPlayerNum;
+        await UniTask.WaitUntil(() => m_FirstChange || (m_SyncStateDoneCount >= GameMgr.Instance.LobbyConfig.TotalPlayerNum), cancellationToken: ct);
+        Debug.Log("host已等待全部client完成上一状态");
+
+        m_FirstChange = false;
+        m_SyncStateDoneCount = 0;
+
+        NgoMgr.Instance.FsmChangeStateClientRpc(stateType, data);
     }
 
     /// <summary>
     /// 是否拥有某状态
     /// </summary>
-    public bool HasState<T>() where T : FsmState<TOwner>
+    public bool HasState(FsmStateType stateType)
     {
-        return _states.ContainsKey(typeof(T));
+        return _states.ContainsKey(stateType);
     }
 
     public void Update()
@@ -100,6 +193,10 @@ public class FsmMgr<TOwner>
 
     public void OnDestroy()
     {
+        _cts?.Cancel();
+        _cts?.Dispose();
+        _cts = null;
+
         _currentState?.OnLeave(this);
         foreach (var state in _states.Values)
         {

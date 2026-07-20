@@ -32,7 +32,7 @@ public class FinalSettleFsmState : FsmState<BoardGameController>
             m_Flag = true;
 
             m_Owner.FinalSettlement();
-            fsm.ChangeState<SettlePanelFsmState>();
+            fsm.HostChangeState(FsmStateType.SettlePanel);
         }
     }
 }

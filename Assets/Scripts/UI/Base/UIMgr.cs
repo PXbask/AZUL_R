@@ -263,6 +263,7 @@ public class UIMgr : MonoSingleton<UIMgr>
 
     public void ShowDefaultPopup(string message)
     {
+        Debug.Log(message);
         ShowPopup(UIStatic.PopupPanelName, message);
     }
 }

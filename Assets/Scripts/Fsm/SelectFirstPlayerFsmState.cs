@@ -9,7 +9,6 @@ public class SelectFirstPlayerFsmState : FsmState<BoardGameController>
     public override void OnEnter(FsmMgr<BoardGameController> fsm, object data = null)
     {
         base.OnEnter(fsm, data);
-        Debug.Log("进入了SelectFirstPlayerFsmState状态");
 
         m_Flag = false;
     }
@@ -40,6 +39,6 @@ public class SelectFirstPlayerFsmState : FsmState<BoardGameController>
             NgoMgr.Instance.ShowPopupContentClientRpc($"选择的首位玩家:{player.PlayerName}");
         }
         //发牌
-        fsm.ChangeState<DealCardsFsmState>(true);
+        fsm.HostChangeState(FsmStateType.DealCards, 1);
     }
 }
