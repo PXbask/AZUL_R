@@ -30,6 +30,16 @@ public class PlayerTurnFsmState : FsmState<BoardGameController>
 
         m_MySeatId = PlayerMgr.Instance.GetGameIdByClientId((int)NetworkManager.Singleton.LocalClientId);
         m_SelectedPieceToken = null;
+
+        if(m_MySeatId == m_SeatId)
+        {
+            UIMgr.Instance.ShowDefaultPopup("现在是你的回合");
+        }
+        else
+        {
+            var player = m_Owner.GetBoardGamePlayerBySeatId(m_SeatId);
+            UIMgr.Instance.ShowDefaultPopup($"现在是{player.PlayerName}的回合");
+        }
     }
 
     public override void OnUpdate(FsmMgr<BoardGameController> fsm)

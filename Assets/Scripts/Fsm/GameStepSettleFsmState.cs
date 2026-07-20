@@ -76,18 +76,26 @@ public class GameStepSettleFsmState : FsmState<BoardGameController>
 
             if (NetworkManager.Singleton.IsHost)
             {
-                bool matchGameOverCondition = BoardGameUtility.ExistColoredAreaRowFullFilled();
-                if (matchGameOverCondition)
-                {
-                    fsm.ChangeState<FinalSettleFsmState>();
-                }
-                else
-                {
-                    //重新发牌
-                    fsm.ChangeState<DealCardsFsmState>(false);
-                }
+                HostDelayChangeState(fsm, 2f);
             }
         }
+    }
+
+    private void HostDelayChangeState(FsmMgr<BoardGameController> fsm, float delay)
+    {
+        DOVirtual.DelayedCall(delay, () =>
+        {
+            bool matchGameOverCondition = BoardGameUtility.ExistColoredAreaRowFullFilled();
+            if (matchGameOverCondition)
+            {
+                fsm.ChangeState<FinalSettleFsmState>();
+            }
+            else
+            {
+                //重新发牌
+                fsm.ChangeState<DealCardsFsmState>(false);
+            }
+        });
     }
 
     private void MoveLoseAreaTokensToBag()
