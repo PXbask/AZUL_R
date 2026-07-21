@@ -26,7 +26,7 @@ public class TableDataBinding : MonoBehaviour
         else
         {
             var clientId = NetworkManager.Singleton.LocalClientId;
-            var myseatId = PlayerMgr.Instance.GetGameIdByClientId((int)clientId);
+            var myseatId = PlayerMgr.Instance.GetSeatIdByClientId((int)clientId);
             if(myseatId == gameId)
             {
                 renderers.material = m_SelfMat;

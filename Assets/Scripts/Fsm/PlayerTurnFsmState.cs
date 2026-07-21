@@ -28,7 +28,7 @@ public class PlayerTurnFsmState : FsmState<BoardGameController>
         else
             Debug.LogError("PlayerTurnFsmState OnEnter data is null!");
 
-        m_MySeatId = PlayerMgr.Instance.GetGameIdByClientId((int)NetworkManager.Singleton.LocalClientId);
+        m_MySeatId = PlayerMgr.Instance.GetSeatIdByClientId((int)NetworkManager.Singleton.LocalClientId);
         m_SelectedPieceToken = null;
 
         if(m_MySeatId == m_SeatId)

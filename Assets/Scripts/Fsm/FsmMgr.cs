@@ -1,10 +1,11 @@
-﻿using System;
+﻿using Cysharp.Threading.Tasks;
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using Unity.Netcode;
-using UnityEngine;
-using Cysharp.Threading.Tasks;
 using System.Threading;
+using Unity.Netcode;
+using UnityEditor;
+using UnityEngine;
 
 public enum FsmStateType
 {
@@ -33,34 +34,45 @@ public class FsmMgr<TOwner>
     private int m_SyncStateDoneCount = 0;
     private bool m_FirstChange;
 
+    /// <summary>
+    /// 状态切换队列，确保状态切换按顺序进行
+    /// </summary>
+    private Queue<StateRequest> _stateRequestQueue;
+
     public TOwner Owner { get; private set; }
 
     private CancellationTokenSource _cts;
 
+    // 队列中每条记录同时保存状态类型和附加数据
+    private struct StateRequest
+    {
+        public FsmStateType StateType;
+        public int Data;
+    }
+
     public FsmMgr(TOwner owner)
     {
         Owner = owner;
-        _cts = new CancellationTokenSource();
 
         _currentState = null;
         m_SyncStateDoneCount = 0;
         m_FirstChange = true;
 
-        Debug.Log("订阅FsmChangeStateEvent和FsmSyncEvent事件");
+        _stateRequestQueue = new Queue<StateRequest>();
+        _cts = new CancellationTokenSource();
+
         EventMgr.Instance?.Subscribe<FsmChangeStateEvent>(OnFsmChangeStateEvent);
+
         if (NetworkManager.Singleton.IsHost)
         {
             EventMgr.Instance?.Subscribe(NoneArgEventEnum.FsmSyncEvent, OnFsmSyncEvent);
+            // 创建时启动队列处理循环
+            ProcessStateQueueAsync(_cts.Token).Forget();
         }
     }
 
     ~FsmMgr()
     {
-        EventMgr.Instance?.Unsubscribe<FsmChangeStateEvent>(OnFsmChangeStateEvent);
-        if (NetworkManager.Singleton.IsHost)
-        {
-            EventMgr.Instance?.Unsubscribe(NoneArgEventEnum.FsmSyncEvent, OnFsmSyncEvent);
-        }
         _cts?.Cancel();
         _cts?.Dispose();
         _cts = null;
@@ -155,35 +167,48 @@ public class FsmMgr<TOwner>
 
     public void HostChangeState(FsmStateType stateType, int data = 0)
     {
-        if(!NetworkManager.Singleton.IsHost) return;
+        if (!NetworkManager.Singleton.IsHost) return;
 
-        if (!_states.TryGetValue(stateType, out IFsmState<TOwner> nextState))
+        if (!_states.ContainsKey(stateType))
         {
             Debug.LogError($"[FsmMgr] State {stateType} not registered.");
             return;
         }
 
-        WaitForAllClientState(stateType, data, _cts.Token).Forget();
-    }
-
-    private async UniTask WaitForAllClientState(FsmStateType stateType, int data, CancellationToken ct)
-    {
-        bool allClientDone = m_SyncStateDoneCount >= GameMgr.Instance.LobbyConfig.TotalPlayerNum;
-        await UniTask.WaitUntil(() => m_FirstChange || (m_SyncStateDoneCount >= GameMgr.Instance.LobbyConfig.TotalPlayerNum), cancellationToken: ct);
-        Debug.Log("host已等待全部client完成上一状态");
-
-        m_FirstChange = false;
-        m_SyncStateDoneCount = 0;
-
-        NgoMgr.Instance.FsmChangeStateClientRpc(stateType, data);
+        // 压入请求队列，由 ProcessStateQueueAsync 统一按序处理
+        _stateRequestQueue.Enqueue(new StateRequest { StateType = stateType, Data = data });
     }
 
     /// <summary>
-    /// 是否拥有某状态
+    /// 队列处理循环：在 FsmMgr 创建时启动，销毁时通过 CancellationToken 停止
+    /// 每次从队列取出一个请求，等待所有客户端同步完成后再发送状态切换指令
     /// </summary>
-    public bool HasState(FsmStateType stateType)
+    private async UniTaskVoid ProcessStateQueueAsync(CancellationToken ct)
     {
-        return _states.ContainsKey(stateType);
+        while (!ct.IsCancellationRequested)
+        {
+            // 等待队列有值
+            await UniTask.WaitUntil(() => _stateRequestQueue.Count > 0, cancellationToken: ct);
+
+            if (ct.IsCancellationRequested) break;
+
+            StateRequest request = _stateRequestQueue.Dequeue();
+
+            // 等待所有客户端完成上一个状态（首次切换直接跳过等待）
+            await UniTask.WaitUntil(
+                () => m_FirstChange || m_SyncStateDoneCount >= GameMgr.Instance.LobbyConfig.TotalPlayerNum,
+                cancellationToken: ct
+            ).TimeoutWithoutException(TimeSpan.FromSeconds(10));
+
+            var stateType = request.StateType;
+            var data = request.Data;
+            Debug.Log($"[FsmMgr] host已等待全部client完成上一状态，切换至 {stateType}");
+
+            m_FirstChange = false;
+            m_SyncStateDoneCount = 0;
+
+            NgoMgr.Instance.FsmChangeStateClientRpc(stateType, data);
+        }
     }
 
     public void Update()
@@ -193,6 +218,12 @@ public class FsmMgr<TOwner>
 
     public void OnDestroy()
     {
+        EventMgr.Instance?.Unsubscribe<FsmChangeStateEvent>(OnFsmChangeStateEvent);
+        if (NetworkManager.Singleton && NetworkManager.Singleton.IsHost)
+        {
+            EventMgr.Instance?.Unsubscribe(NoneArgEventEnum.FsmSyncEvent, OnFsmSyncEvent);
+        }
+
         _cts?.Cancel();
         _cts?.Dispose();
         _cts = null;

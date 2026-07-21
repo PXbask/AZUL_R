@@ -115,6 +115,8 @@ public class BoardGameController : MonoBehaviour
                 GameFsm.HostChangeState(FsmStateType.SelectFirstPlayer);
             });
         }
+
+        ResetAllPlayerControllerTrans();
     }
 
     private void InitGameFsm()
@@ -127,12 +129,6 @@ public class BoardGameController : MonoBehaviour
         GameFsm.AddState(FsmStateType.GameStepSettle, new GameStepSettleFsmState());
         GameFsm.AddState(FsmStateType.FinalSettle, new FinalSettleFsmState());
         GameFsm.AddState(FsmStateType.SettlePanel, new SettlePanelFsmState());
-
-        DOVirtual.DelayedCall(2f, () =>
-        {
-            GameFsm.HostChangeState(FsmStateType.Idle);
-        });
-
     }
 
     private void InitCenterTable()
@@ -153,6 +149,11 @@ public class BoardGameController : MonoBehaviour
         }
     }
 
+    public void HostChangeState(FsmStateType stateType, int data = 0)
+    {
+        GameFsm.HostChangeState(stateType, data);
+    }
+
     private void Update()
     {
         GameFsm?.Update();
@@ -164,7 +165,7 @@ public class BoardGameController : MonoBehaviour
         GameFsm = null;
     }
 
-    public Transform GetSeatTransByGameId(int gameId)
+    public Transform GetSeatTransBySeatId(int gameId)
     {
         if (GameTableDic.TryGetValue(gameId, out GameTable v))
         {
@@ -195,10 +196,10 @@ public class BoardGameController : MonoBehaviour
         return DiskTrans;
     }
 
-    public void MakeBoardGamePlayer(int clientId, int gameId, PlayerBoard board)
+    public void MakeBoardGamePlayer(int clientId, int seatId, PlayerBoard board)
     {
-        var playerData = PlayerMgr.Instance.GetPlayerDataByGameId(gameId);  
-        if(GameTableDic.TryGetValue(gameId, out var table))
+        var playerData = PlayerMgr.Instance.GetPlayerDataBySeatId(seatId);  
+        if(GameTableDic.TryGetValue(seatId, out var table))
         {
             BoardGamePlayer player = null;
             if(playerData.PlayerType == PlayerType.Human)
@@ -221,10 +222,7 @@ public class BoardGameController : MonoBehaviour
                 {
                     //三秒后开始对局
                     NgoMgr.Instance.ShowPopupContentClientRpc("游戏马上开始");
-                    DOVirtual.DelayedCall(3f, () =>
-                    {
-                        GameFsm.HostChangeState(FsmStateType.SelectFirstPlayer);
-                    });
+                    GameFsm.HostChangeState(FsmStateType.SelectFirstPlayer);
                 }
             }
         }
@@ -534,5 +532,91 @@ public class BoardGameController : MonoBehaviour
             playerDataList.Add(player.Value.GetPlayerData());
         }
         return playerDataList.ToArray();
+    }
+
+    private void ResetAllPlayerControllerTrans()
+    {
+        //玩家物体回到对应位置
+        if (NetworkManager.Singleton.IsHost)
+        {
+            var players = PlayerMgr.Instance.GetAllPlayers();
+            foreach (var player in players)
+            {
+                var pc = PlayerController.Get((ulong)player.ClientId);
+                if (pc)
+                {
+                    int seatId = PlayerMgr.Instance.GetSeatIdByClientId(player.ClientId);
+                    var seatTrans = GetSeatTransBySeatId(seatId);
+                    pc.transform.SetPositionAndRotation(seatTrans.position, seatTrans.rotation);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// 生成代表玩家的游戏物体
+    /// </summary>
+    /// <param name="clientId"></param>
+    public void SpawnPlayerControllerObject(int clientId)
+    {
+        int seatId = PlayerMgr.Instance.GetSeatIdByClientId(clientId);
+        var seatTrans = GetSeatTransBySeatId(seatId);
+        var obj = NgoMgr.Instance.SpawnFromPool<PlayerController>(
+            clientId >= 0 ? (ulong)clientId : NetworkManager.Singleton.LocalClientId,
+            seatTrans.position,
+            seatTrans.rotation);
+        var pc = obj.GetComponent<PlayerController>();
+        pc.PlayerData.Value = PlayerMgr.Instance.GetPlayerDataBySeatId(seatId);
+    }
+
+    /// <summary>
+    /// 生成桌游用到的所有的游戏板块
+    /// </summary>
+    public void SpawnAllGameSectors()
+    {
+        //玩家个人版图
+        SpawnAllPlayerBoards();
+        //工厂版块
+        SpawnAllFactoryDisks();
+    }
+
+    private void SpawnAllPlayerBoards()
+    {
+        foreach (var player in PlayerMgr.Instance.GetAllPlayers())
+        {
+            var clientId = player.ClientId;
+            int seatId = PlayerMgr.Instance.GetSeatIdByClientId(clientId);
+            var boardTrans = GetBoardTransByGameId(seatId);
+            var board = PoolMgr.Instance.Spawn<PlayerBoard>(boardTrans);
+            board.Init(seatId);
+            board.transform.SetPositionAndRotation(boardTrans.position, boardTrans.rotation);
+
+            MakeBoardGamePlayer(clientId, seatId, board);
+        }
+    }
+
+    private void SpawnAllFactoryDisks()
+    {
+        int totalNum = GameMgr.Instance.LobbyConfig.TotalPlayerNum;
+        var diskNum = GetFactoryDisksByPlayerNum(totalNum);
+        var diskTrans = GetDiskTrans();
+        for (int i = 0; i < diskNum; i++)
+        {
+            var disk = PoolMgr.Instance.Spawn<FactoryDisk>(diskTrans);
+            disk.Init(i);
+            var degreePiece = 360f / diskNum;
+            Vector3 pos = new
+                (0.35f * Mathf.Cos(Mathf.Deg2Rad * i * degreePiece),
+                0,
+                0.35f * Mathf.Sin(Mathf.Deg2Rad * i * degreePiece));
+            disk.transform.localPosition = pos;
+
+            AddFactoryDisk(i, disk);
+        }
+    }
+
+    private int GetFactoryDisksByPlayerNum(int num)
+    {
+        return 2 * num + 1;
     }
 }

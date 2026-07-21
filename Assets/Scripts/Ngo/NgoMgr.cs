@@ -289,15 +289,9 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
     }
 
     [ClientRpc]
-    public void SpawnPlayerBoardsClientRpc()
+    public void SpawnGameSectorsClientRpc()
     {
-        BoardGameMgr.Instance.SpawnAllPlayerBoards();
-    }
-
-    [ClientRpc]
-    public void SpawnFactoryDisksClientRpc()
-    {
-        BoardGameMgr.Instance.SpawnAllFactoryDisks();
+        BoardGameMgr.Instance.OnSpawnAllGameSectors();
     }
 
     [ClientRpc]
@@ -309,25 +303,25 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
     [ClientRpc]
     public void SpawnFactoryDiskPieceTokensClientRpc(int[] factoryData, int cols, bool reset)
     {
-        BoardGameMgr.Instance.SpawnFactoryDiskPieceTokens(factoryData, cols, reset);
+        BoardGameMgr.Instance.OnSpawnFactoryDiskPieceTokens(factoryData, cols, reset);
     }
 
     [ClientRpc]
     public void SpawnFirstTokenClientRpc()
     {
-        BoardGameMgr.Instance.SpawnFirstToken();
+        BoardGameMgr.Instance.OnSpawnFirstToken();
     }
 
     [ClientRpc]
     public void SpawnScorePieceTokenClientRpc()
     {
-        BoardGameMgr.Instance.SpawnScorePieceToken();
+        BoardGameMgr.Instance.OnSpawnScorePieceToken();
     }
 
     [ClientRpc]
     public void SetCurrentPlayerTurnClientRpc(int seatId)
     {
-        BoardGameMgr.Instance.SetCurrentPlayerTurn(seatId);
+        BoardGameMgr.Instance.OnSetCurrentPlayerTurn(seatId);
     }
 
     [ClientRpc]
@@ -360,5 +354,11 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
     public void ClientDoActionServerRpc(PlayerActionData data)
     {
         BoardGameMgr.Instance.ClientDoAction(data);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    public void NotifyHostEnterGameServerRpc(int clientId)
+    {
+        BoardGameMgr.Instance.ClientEnterBoardGameScene(clientId);
     }
 }

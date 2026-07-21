@@ -149,6 +149,20 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
         return result;
     }
 
+    public List<PlayerData> GetAllAiPlayer()
+    {
+        List<PlayerData> res = new List<PlayerData>();
+        var players = GetAllPlayers();
+        foreach (var player in players)
+        {
+            if (player.PlayerType == PlayerType.AI)
+            {
+                res.Add(player);
+            }
+        }
+        return res;
+    }
+
     public void PlayerSetReady(int clientId, bool v)
     {
         if (ContainPlayer(clientId))
@@ -161,7 +175,7 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
         }
     }
 
-    public int GetGameIdByClientId(int clientId)
+    public int GetSeatIdByClientId(int clientId)
     {
         if (ContainPlayer(clientId))
         {
@@ -184,7 +198,7 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
         return default;
     }
 
-    public PlayerData GetPlayerDataByGameId(int gameId)
+    public PlayerData GetPlayerDataBySeatId(int gameId)
     {
         foreach (var data in ConnectedPlayerData.Values)
         {

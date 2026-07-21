@@ -8,23 +8,7 @@ using UnityEngine;
 
 public class BoardGameMgr : MonoSingleton<BoardGameMgr>
 {
-    private BoardGameController m_GameController;
-    public BoardGameController GameController
-    {
-        get
-        {
-            if(m_GameController == null)
-            {
-                GameObject obj = GameObject.Find("BoardGameController");
-                if (obj)
-                {
-                    m_GameController = obj.GetComponent<BoardGameController>();
-                    m_GameController.Init();
-                }
-            }
-            return m_GameController;
-        }
-    }
+    public BoardGameController GameController {  get; private set; }
 
     private Dictionary<int, bool> PlayerEnterSceneFlag = new();
 
@@ -47,64 +31,41 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
     public void GameReset()
     {
         GameController.GameReset();
-        ResetAllPlayerControllerTrans();
-    }
-
-    private void ResetAllPlayerControllerTrans()
-    {
-        //玩家物体回到对应位置
-        if (NetworkManager.Singleton.IsHost)
-        {
-            var players = PlayerMgr.Instance.GetAllPlayers();
-            foreach (var player in players)
-            {
-                var pc = PlayerController.Get((ulong)player.ClientId);
-                if (pc)
-                {
-                    int gameId = PlayerMgr.Instance.GetGameIdByClientId(player.ClientId);
-                    var seatTrans = GetSeatTransByGameId(gameId);
-                    pc.transform.SetPositionAndRotation(seatTrans.position, seatTrans.rotation);
-                }
-            }
-        }
     }
 
     private void OnNgoLoadSceneComplete(NgoLoadSceneCompleteEvent e)
     {
-        _ = GameController; //确保GameController已初始化
-        if (!NetworkManager.Singleton.IsHost) return;
+        //只进行本地逻辑
+        if (e.ClientId != (int)NetworkManager.Singleton.LocalClientId) return;
 
+        //进入游戏场景
         if(e.SceneName == SceneStatic.GameSceneName)
         {
-            if (e.ClientId == (int)NetworkManager.Singleton.LocalClientId)
+            //确保GameController已初始化
+            if (GameController == null)
             {
-                HostEnterBoardGameScene();
-            }
-
-            HostAddNewPlayer((int)e.ClientId);
-
-            if (e.ClientId == (int)NetworkManager.Singleton.LocalClientId)
-            {
-                //模拟Ai玩家入场
-                var players = PlayerMgr.Instance.GetAllPlayers();
-                foreach (var player in players)
+                GameObject obj = GameObject.Find("BoardGameController");
+                if (obj)
                 {
-                    if (player.PlayerType == PlayerType.AI)
-                    {
-                        EventMgr.Instance.Trigger(new NgoLoadSceneCompleteEvent
-                        {
-                            ClientId = player.ClientId,
-                            SceneName = e.SceneName,
-                        });
-                    }
+                    GameController = obj.GetComponent<BoardGameController>();
+                    GameController.Init();
+                }
+                else
+                {
+                    Debug.LogError("BoardGameController not found in scene!");
                 }
             }
-        }
-        else
-        {
-            if(e.ClientId == (int)NetworkManager.Singleton.LocalClientId)
+
+            //通知Host本地初始化完毕
+            NgoMgr.Instance.NotifyHostEnterGameServerRpc(e.ClientId);
+            if (NetworkManager.Singleton.IsHost)
             {
-                HostLeaveBoardGameScene();
+                //AI也要通知Host
+                var aiPlayers = PlayerMgr.Instance.GetAllAiPlayer();
+                foreach (var aiPlayer in aiPlayers)
+                {
+                    NgoMgr.Instance.NotifyHostEnterGameServerRpc(aiPlayer.ClientId);
+                }
             }
         }
     }
@@ -114,22 +75,24 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
         UIMgr.Instance.ShowPanel(UIStatic.SettlePanelName, e);
     }
 
-    private void HostEnterBoardGameScene()
+    /// <summary>
+    /// Host收到客户端进入游戏场景的通知后，调用此方法进行处理
+    /// </summary>
+    public void ClientEnterBoardGameScene(int clientId)
     {
         if (!NetworkManager.Singleton.IsHost)
         {
             Debug.LogError("Local is not Host!");
             return;
         }
-    }
 
-    private void HostLeaveBoardGameScene()
-    {
-        if (!NetworkManager.Singleton.IsHost)
+        if(PlayerEnterSceneFlag.ContainsKey(clientId))
         {
-            Debug.LogError("Local is not Host!");
+            Debug.LogError($"Player ClientId:{clientId} is already enter scene");
             return;
         }
+
+        HostAddNewPlayer(clientId);
     }
 
     public void HostAddNewPlayer(int clientId)
@@ -140,126 +103,52 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
             return;
         }
 
-        int gameId = PlayerMgr.Instance.GetGameIdByClientId(clientId);
-        var seatTrans = GetSeatTransByGameId(gameId);
-        var aiObj = NgoMgr.Instance.SpawnFromPool<PlayerController>(
-            clientId >= 0 ? (ulong)clientId : NetworkManager.Singleton.LocalClientId,
-            seatTrans.position,
-            seatTrans.rotation);
-        var pc = aiObj.GetComponent<PlayerController>();
-        pc.PlayerData.Value = PlayerMgr.Instance.GetPlayerDataByGameId(gameId);
-
+        GameController.SpawnPlayerControllerObject(clientId);
+       
         if (!PlayerEnterSceneFlag.ContainsKey(clientId))
         {
             PlayerEnterSceneFlag[clientId] = true;
         }
         else
         {
-            Debug.Log($"Player ClientId:{clientId} is already enter scene");
+            Debug.LogError($"Player ClientId:{clientId} is already enter scene");
             return;
         }
 
+        //说明所有人都已进入游戏场景并初始化完成
         if(PlayerEnterSceneFlag.Count == GameMgr.Instance.LobbyConfig.TotalPlayerNum)
         {
-            //说明所有人都已进入棋牌场景
-            OnAllPlayerEnterGameScene();
+            GameController.HostChangeState(FsmStateType.Idle);
+            NgoMgr.Instance.SpawnGameSectorsClientRpc();
         }
     }
 
-    private void OnAllPlayerEnterGameScene()
+    /// <summary>
+    /// 生成桌游用到的所有的游戏板块
+    /// </summary>
+    public void OnSpawnAllGameSectors()
     {
-        NgoMgr.Instance.SpawnPlayerBoardsClientRpc();
-        NgoMgr.Instance.SpawnFactoryDisksClientRpc();
+        GameController.SpawnAllGameSectors();
     }
 
-    public Transform GetSeatTransByGameId(int gameId)
-    {
-        return GameController.GetSeatTransByGameId(gameId);
-    }
-
-    public Transform GetBoardTransByGameId(int gameId)
-    {
-        return GameController.GetBoardTransByGameId(gameId);
-    }
-
-    public Transform GetDiskTransform()
-    {
-        return GameController.GetDiskTrans();
-    }
-
-    public void AddBoardGamePlayer(int clientId, int gameId, PlayerBoard board)
-    {
-        GameController.MakeBoardGamePlayer(clientId, gameId, board);
-    }
-
-    public void AddFactoryDisk(int index, FactoryDisk disk)
-    {
-        GameController.AddFactoryDisk(index, disk);
-    }
-
-    public void SpawnAllPlayerBoards()
-    {
-        foreach (var player in PlayerMgr.Instance.GetAllPlayers())
-        {
-            var clientId = player.ClientId;
-            int gameId = PlayerMgr.Instance.GetGameIdByClientId(clientId);
-            var boardTrans = GetBoardTransByGameId(gameId);
-            var board = PoolMgr.Instance.Spawn<PlayerBoard>(boardTrans);
-            board.Init(gameId);
-            board.transform.SetPositionAndRotation(boardTrans.position, boardTrans.rotation);
-
-            AddBoardGamePlayer(clientId, gameId, board);
-        }
-    }
-
-    public void SpawnAllFactoryDisks()
-    {
-        int totalNum = GameMgr.Instance.LobbyConfig.TotalPlayerNum;
-        var diskNum = GetFactoryDisksByPlayerNum(totalNum);
-        var diskTrans = GetDiskTransform();
-        for (int i = 0; i < diskNum; i++)
-        {
-            var disk = PoolMgr.Instance.Spawn<FactoryDisk>(diskTrans);
-            disk.Init(i);
-            var degreePiece = 360f / diskNum;
-            Vector3 pos = new
-                (0.35f * Mathf.Cos(Mathf.Deg2Rad * i * degreePiece),
-                0,
-                0.35f * Mathf.Sin(Mathf.Deg2Rad * i * degreePiece));
-            disk.transform.localPosition = pos;
-
-            AddFactoryDisk(i, disk);
-        }
-    }
-
-    private int GetFactoryDisksByPlayerNum(int num)
-    {
-        return 2 * num + 1;
-    }
-
-    public void SpawnFactoryDiskPieceTokens(int[] factoryData, int cols, bool reset)
+    public void OnSpawnFactoryDiskPieceTokens(int[] factoryData, int cols, bool reset)
     {
         GameController.SpawnFactoryDiskPieceTokens(factoryData, cols, reset);
     }
 
-    public void SpawnFirstToken()
+    public void OnSpawnFirstToken()
     {
         GameController.SpawnFirstToken();
     }
 
-    public void SpawnScorePieceToken()
+    public void OnSpawnScorePieceToken()
     {
         GameController.SpawnScorePieceToken();
     }
 
-    public void SetCurrentPlayerTurn(int seatId)
+    public void OnSetCurrentPlayerTurn(int seatId)
     {
         GameController.SetCurrentPlayerTurn(seatId);
-    }
-
-    public int GetCurrentPlayerTurn()
-    {
-        return GameController.CurrentPlayerSeatId;
     }
 
     public void ClientDoAction(PlayerActionData data)
