@@ -525,4 +525,19 @@ public static class BoardGameUtility
         }
         return filledRowNum;
     }
+
+    public static PlaceTokenAreaData GetPlaceTokenAreaData(NormalPlaceTokenArea area)
+    {
+        if (area == null) return null;
+        if (!area.IsEmpty() && area.Token is not NormalPieceToken)
+        {
+            Debug.LogError("PlaceTokenArea内的Token不是NormalPieceToken，数据异常。");
+            return null;
+        }
+        return new PlaceTokenAreaData
+        {
+            empty = area.IsEmpty(),
+            color = area.IsEmpty() ? PieceColorType.Default : (PieceColorType)((NormalPieceToken)area.Token).PieceData.PieceTokenType
+        };
+    }
 }

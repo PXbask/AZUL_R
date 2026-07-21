@@ -1,4 +1,5 @@
 ﻿using AZUL;
+using cfg;
 using cfg.AZUL;
 using DG.Tweening;
 using System;
@@ -618,5 +619,116 @@ public class BoardGameController : MonoBehaviour
     private int GetFactoryDisksByPlayerNum(int num)
     {
         return 2 * num + 1;
+    }
+
+    public TableData GetTableData(int playerSeatId)
+    {
+        TableData resData = new TableData();
+        resData.totalPlayerCount = GameMgr.Instance.LobbyConfig.TotalPlayerNum;
+        resData.factories = GetFactoriesData();
+        resData.center = GetCenterData();
+
+        var player = GetBoardGamePlayerBySeatId(playerSeatId);
+
+        resData.me = player.PlayerBoard.GetPlayerBoardData();
+        resData.opponents = new List<PlayerBoardData>();
+
+        for(int i = 1; i < GameMgr.Instance.LobbyConfig.TotalPlayerNum; i++)
+        {
+            int seatId = (i + playerSeatId) % GameMgr.Instance.LobbyConfig.TotalPlayerNum;
+            var opponent = GetBoardGamePlayerBySeatId(seatId);
+            resData.opponents.Add(opponent.PlayerBoard.GetPlayerBoardData());
+        }
+
+        resData.remainTokens = GetTokenInfoInBag();
+        resData.loseTokens = GetTokenInfoInLose();
+        return resData;
+    }
+
+    /// <summary>
+    /// 获取弃牌区内的棋子数量信息
+    /// </summary>
+    private List<TokenNumberData> GetTokenInfoInLose()
+    {
+        var dic = new Dictionary<PieceColorType, int>();
+
+        var tableData = DataMgr.Instance.Table.TbPiece;
+        foreach (var id in m_LostPieceIds)
+        {
+            var data = tableData.Get(id);
+            if (dic.ContainsKey((PieceColorType)data.PieceTokenType))
+            {
+                dic[(PieceColorType)data.PieceTokenType]++;
+            }
+            else
+            {
+                dic[(PieceColorType)data.PieceTokenType] = 1;
+            }
+        }
+
+        var res = new List<TokenNumberData>();
+        foreach (var kvp in dic)
+        {
+            res.Add(new TokenNumberData { color = kvp.Key, number = kvp.Value });
+        }
+
+        return res;
+    }
+
+    /// <summary>
+    /// 获取游戏盒内的棋子数量信息
+    /// </summary>
+    private List<TokenNumberData> GetTokenInfoInBag()
+    {
+        var dic = new Dictionary<PieceColorType, int>();
+
+        var tableData = DataMgr.Instance.Table.TbPiece;
+        foreach (var id in m_RemainPieceIds)
+        {
+            var data = tableData.Get(id);
+            if (dic.ContainsKey((PieceColorType)data.PieceTokenType))
+            {
+                dic[(PieceColorType)data.PieceTokenType]++;
+            }
+            else
+            {
+                dic[(PieceColorType)data.PieceTokenType] = 1;
+            }
+        }
+
+        var res = new List<TokenNumberData>();
+        foreach (var kvp in dic)
+        {
+            res.Add(new TokenNumberData { color = kvp.Key, number = kvp.Value });
+        }
+
+        return res;
+    }
+
+    private List<PlaceTokenAreaData> GetCenterData()
+    {
+        List<PlaceTokenAreaData> centerData = new List<PlaceTokenAreaData>();
+        foreach (var area in MidTablePlaceAreas.Values)
+        {
+            PlaceTokenAreaData data = BoardGameUtility.GetPlaceTokenAreaData(area);
+            centerData.Add(data);
+        }
+        return centerData;
+    }
+
+    private List<List<PlaceTokenAreaData>> GetFactoriesData()
+    {
+        List<List<PlaceTokenAreaData>> factoriesData = new List<List<PlaceTokenAreaData>>();
+        foreach (var factoryDisk in FactoryDiskDic.Values)
+        {
+            List<PlaceTokenAreaData> factoryData = new List<PlaceTokenAreaData>();
+            foreach (var area in factoryDisk.PlaceTokenAreas)
+            {
+                PlaceTokenAreaData data = BoardGameUtility.GetPlaceTokenAreaData(area);
+                factoryData.Add(data);
+            }
+            factoriesData.Add(factoryData);
+        }
+        return factoriesData;
     }
 }

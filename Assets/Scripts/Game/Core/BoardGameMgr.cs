@@ -123,6 +123,16 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
         }
     }
 
+    public void SendCurrentBoardInfoToAIServer(int seatId)
+    {
+        var tableData = GameController.GetTableData(seatId);
+        string jsonString = LitJson.JsonMapper.ToJson(tableData);
+        Debug.Log($"Table Data JSON: {jsonString}");
+
+        // 发送 JSON 字符串到 AI 服务器
+        AIMgr.Instance.SendNetworkMessage(jsonString);
+    }
+
     /// <summary>
     /// 生成桌游用到的所有的游戏板块
     /// </summary>

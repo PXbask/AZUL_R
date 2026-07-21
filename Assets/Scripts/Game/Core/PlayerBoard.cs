@@ -225,5 +225,41 @@ namespace AZUL
         {
             
         }
+
+        public PlayerBoardData GetPlayerBoardData()
+        {
+            PlayerBoardData data = new PlayerBoardData
+            {
+                score = Score,
+                seatId = SeatId,
+                clientId = PlayerMgr.Instance.GetPlayerDataBySeatId(SeatId).ClientId,
+                manualAreas = new List<List<PlaceTokenAreaData>>(),
+                coloredAreas = new List<List<PlaceTokenAreaData>>(),
+                loseAreas = new List<PlaceTokenAreaData>()
+            };
+            foreach (var row in LeftPlaceTokenAreas)
+            {
+                List<PlaceTokenAreaData> rowData = new List<PlaceTokenAreaData>();
+                foreach (var area in row)
+                {
+                    rowData.Add(BoardGameUtility.GetPlaceTokenAreaData(area));
+                }
+                data.manualAreas.Add(rowData);
+            }
+            foreach (var row in RightPlaceTokenAreas)
+            {
+                List<PlaceTokenAreaData> rowData = new List<PlaceTokenAreaData>();
+                foreach (var area in row)
+                {
+                    rowData.Add(BoardGameUtility.GetPlaceTokenAreaData(area));
+                }
+                data.coloredAreas.Add(rowData);
+            }
+            foreach (var area in LosePlaceTokenAreas)
+            {
+                data.loseAreas.Add(BoardGameUtility.GetPlaceTokenAreaData(area));
+            }
+            return data;
+        }
     }
 }

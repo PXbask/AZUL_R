@@ -63,7 +63,7 @@ public class FsmMgr<TOwner>
 
         EventMgr.Instance?.Subscribe<FsmChangeStateEvent>(OnFsmChangeStateEvent);
 
-        if (NetworkManager.Singleton.IsHost)
+        if (NetworkManager.Singleton && NetworkManager.Singleton.IsHost)
         {
             EventMgr.Instance?.Subscribe(NoneArgEventEnum.FsmSyncEvent, OnFsmSyncEvent);
             // 创建时启动队列处理循环

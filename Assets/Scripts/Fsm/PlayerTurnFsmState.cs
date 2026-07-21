@@ -4,8 +4,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
-using Unity.VisualScripting;
-using Unity.VisualScripting.Antlr3.Runtime;
 using UnityEngine;
 
 public class PlayerTurnFsmState : FsmState<BoardGameController>
@@ -21,6 +19,7 @@ public class PlayerTurnFsmState : FsmState<BoardGameController>
         base.OnEnter(fsm, data);
         m_Owner = fsm.Owner;
 
+        EventMgr.Instance.Subscribe<ReceiveAIServerMsgEvent>(OnReceiveAIServerMsgEvent);
         EventMgr.Instance.Subscribe<PlayerDoActionEvent>(OnPlayerDoAction);
 
         if(data != null)
@@ -39,6 +38,15 @@ public class PlayerTurnFsmState : FsmState<BoardGameController>
         {
             var player = m_Owner.GetBoardGamePlayerBySeatId(m_SeatId);
             UIMgr.Instance.ShowDefaultPopup($"现在是{player.PlayerName}的回合");
+        }
+
+        if(NetworkManager.Singleton.IsHost)
+        {
+            if(PlayerMgr.Instance.GetPlayerDataBySeatId(m_SeatId).PlayerType == PlayerType.AI)
+            {
+                //如果是AI玩家的回合，向AI服务器发送信息
+                BoardGameMgr.Instance.SendCurrentBoardInfoToAIServer(m_SeatId);
+            }
         }
     }
 
@@ -64,7 +72,21 @@ public class PlayerTurnFsmState : FsmState<BoardGameController>
     {
         base.OnLeave(fsm);
         EventMgr.Instance?.Unsubscribe<PlayerDoActionEvent>(OnPlayerDoAction);
+        EventMgr.Instance?.Unsubscribe<ReceiveAIServerMsgEvent>(OnReceiveAIServerMsgEvent);
         ClearSelectedPieceTokenWithAnim();
+    }
+
+    private void OnReceiveAIServerMsgEvent(ReceiveAIServerMsgEvent e)
+    {
+        if (!NetworkManager.Singleton.IsHost) return;
+
+        if (e.AIAction.SeatId != m_SeatId)
+        {
+            Debug.LogWarning($"Received AI action for seat {e.AIAction.SeatId}, but current turn is for seat {m_SeatId}. Ignoring action.");
+            return;
+        }
+
+        NgoMgr.Instance.ClientDoActionServerRpc(e.AIAction);
     }
 
     private void OnPlayerDoAction(PlayerDoActionEvent e)
