@@ -22,6 +22,11 @@ public class AIMgr : MonoSingleton<AIMgr>
         m_Running = false;
     }
 
+    private void Start()
+    {
+        Run();
+    }
+
     protected override void OnDestroy()
     {
         Stop();

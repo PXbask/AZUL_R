@@ -15,8 +15,14 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
 
         if (NetworkManager.Singleton != null)
         {
+            // 开启连接审批
+            NetworkManager.Singleton.NetworkConfig.ConnectionApproval = true;
+
             NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
             NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
+
+            // 注册审批回调
+            NetworkManager.Singleton.ConnectionApprovalCallback += OnConnectionApproval;
         }
     }
 
@@ -56,6 +62,27 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
         {
             NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
             NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnected;
+
+            NetworkManager.Singleton.ConnectionApprovalCallback -= OnConnectionApproval;
+        }
+    }
+
+    private void OnConnectionApproval(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
+    {
+        int currentCount = NetworkManager.Singleton.ConnectedClients.Count;
+        int maxPlayers = GameMgr.Instance.LobbyConfig.PlayerNum; // 只计算真人玩家上限
+
+        if (currentCount >= maxPlayers)
+        {
+            // 拒绝连接
+            response.Approved = false;
+            response.Reason = $"房间已满 ({currentCount}/{maxPlayers})";
+            Debug.Log($"[NgoMgr] 拒绝连接，房间已满: {currentCount}/{maxPlayers}");
+        }
+        else
+        {
+            response.Approved = true;
+            response.CreatePlayerObject = true; // 自动生成 PlayerObject
         }
     }
 
@@ -148,6 +175,7 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
             AiPort = e.AiPort,
             PlayerPort = e.PlayerPort
         };
+
         NetworkManager.Singleton.StartHost();
         NgoLoadScene(SceneStatic.LobbySceneName);
     }
@@ -231,10 +259,22 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
 
     private void OnClientDisconnected(ulong obj)
     {
-        if (!IsHost) return;
+        //reason不为空说明是审批不通过，否则是正常断线
+        string reason = NetworkManager.Singleton.DisconnectReason;
 
-        Debug.Log($"Client disconnected with ID: {obj}");
-        EventMgr.Instance.Trigger(new PlayerDisconnectedEvent { ClientId = obj });
+        if (IsHost)
+        {
+            // Host 端回调，说明有客户端断开连接
+            Debug.Log($"Client disconnected with ID: {obj}");
+            EventMgr.Instance.Trigger(new PlayerDisconnectedEvent { ClientId = obj });
+        }
+        else
+        {
+            if (!string.IsNullOrEmpty(reason))
+                UIMgr.Instance.ShowDefaultPopup($"连接被拒绝，原因：{reason}");
+            else
+                UIMgr.Instance.ShowDefaultPopup("与服务器断开连接");
+        }
     }
 
     /// <summary>

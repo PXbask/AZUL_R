@@ -83,12 +83,12 @@ public class FsmMgr<TOwner>
         if(!NetworkManager.Singleton.IsHost) return;
 
         m_SyncStateDoneCount++;
-        if (m_SyncStateDoneCount > GameMgr.Instance.LobbyConfig.TotalPlayerNum)
+        if (m_SyncStateDoneCount > GameMgr.Instance.LobbyConfig.PlayerNum)
         {
             Debug.LogWarning("[FsmMgr] SyncStateDoneCount exceeds total player number.");
-            m_SyncStateDoneCount = GameMgr.Instance.LobbyConfig.TotalPlayerNum;
+            m_SyncStateDoneCount = GameMgr.Instance.LobbyConfig.PlayerNum;
         }
-        Debug.Log($"[FsmMgr] 当前状态:{_currentState?.GetType().Name} 同步状态: {m_SyncStateDoneCount}/{GameMgr.Instance.LobbyConfig.TotalPlayerNum}");
+        Debug.Log($"[FsmMgr] 当前状态:{_currentState?.GetType().Name} 同步状态: {m_SyncStateDoneCount}/{GameMgr.Instance.LobbyConfig.PlayerNum}");
     }
 
     private void OnFsmChangeStateEvent(FsmChangeStateEvent e)
@@ -196,7 +196,7 @@ public class FsmMgr<TOwner>
 
             // 等待所有客户端完成上一个状态（首次切换直接跳过等待）
             await UniTask.WaitUntil(
-                () => m_FirstChange || m_SyncStateDoneCount >= GameMgr.Instance.LobbyConfig.TotalPlayerNum,
+                () => m_FirstChange || m_SyncStateDoneCount >= GameMgr.Instance.LobbyConfig.PlayerNum,
                 cancellationToken: ct
             ).TimeoutWithoutException(TimeSpan.FromSeconds(10));
 
@@ -207,7 +207,7 @@ public class FsmMgr<TOwner>
             m_FirstChange = false;
             m_SyncStateDoneCount = 0;
 
-            NgoMgr.Instance.FsmChangeStateClientRpc(stateType, data);
+            NgoMgr.Instance?.FsmChangeStateClientRpc(stateType, data);
         }
     }
 

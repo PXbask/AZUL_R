@@ -87,7 +87,7 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
         }
         if (!ConnectedPlayerData.TryGetValue(clientId, out PlayerData value))
         {
-            Debug.LogError($"PlayerDataDict does not contain clientId {clientId}");
+            Debug.Log($"PlayerDataDict does not contain clientId {clientId}");
         }
         else
         {
