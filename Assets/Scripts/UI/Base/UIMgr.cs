@@ -56,6 +56,7 @@ public class UIMgr : MonoSingleton<UIMgr>
     /// </summary>
     public void HideTopPanel()
     {
+        Debug.Log("[UIMgr] Hide top panel.");
         if (_panelStack.Last == null)
         {
             Debug.LogWarning("[UIMgr] Panel stack is empty.");
@@ -78,6 +79,7 @@ public class UIMgr : MonoSingleton<UIMgr>
     /// </summary>
     public void HideAllPanels()
     {
+        Debug.Log("[UIMgr] Hiding all panels.");
         var node = _panelStack.Last;
         while (node != null)
         {

@@ -21,9 +21,10 @@ public class JoinPanel : UIPanel
 
     public override string PoolKey => nameof(JoinPanel);
 
-    public override void OnInit()
+    public override void OnShow(object data)
     {
-        base.OnInit();
+        base.OnShow(data);
+
         JoinBtn.onClick.AddListener(OnClickJoinBtn);
         QuitBtn.onClick.AddListener(OnClickQuitBtn);
 

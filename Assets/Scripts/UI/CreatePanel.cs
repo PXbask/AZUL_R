@@ -39,9 +39,9 @@ public class CreatePanel : UIPanel
 
     public override string PoolKey => nameof(CreatePanel);
 
-    public override void OnInit()
+    public override void OnShow(object data)
     {
-        base.OnInit();
+        base.OnShow(data);
 
         //暂时不写Ai相关逻辑
         AiPort.placeholder.GetComponent<TextMeshProUGUI>().text = GameStatic.AiDefaultPort.ToString();
@@ -68,7 +68,6 @@ public class CreatePanel : UIPanel
 
         CreateBtn.onClick.AddListener(OnClickCreateBtn);
         QuitBtn.onClick.AddListener(OnClickQuitBtn);
-
         UpdateView();
     }
 
