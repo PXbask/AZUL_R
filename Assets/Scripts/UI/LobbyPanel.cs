@@ -36,6 +36,7 @@ public class LobbyPanel : MonoBehaviour
     private void Start()
     {
         StartBtn.onClick.AddListener(OnStartBtnClicked);
+        QuitBtn.onClick.AddListener(OnQuitBtnClicked);
         UpdateView();
     }
 
@@ -50,6 +51,11 @@ public class LobbyPanel : MonoBehaviour
     private void OnStartBtnClicked()
     {
         NgoMgr.Instance.NgoLoadScene(SceneStatic.GameSceneName);
+    }
+
+    private void OnQuitBtnClicked()
+    {
+        NgoMgr.Instance.LeaveGame();
     }
 
     private void OnPlayerStateChange()

@@ -16,6 +16,9 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
     {
         EventMgr.Instance.Subscribe<NgoLoadSceneCompleteEvent>(OnNgoLoadSceneComplete);
         EventMgr.Instance.Subscribe<ShowSettlePanelEvent>(OnShowSettlePanelEvent);
+
+        NetworkManager.Singleton.OnServerStarted += OnServerStarted;
+        NetworkManager.Singleton.OnServerStopped += OnServerStopped;
     }
 
     protected override void OnDestroy()
@@ -26,6 +29,23 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
             EventMgr.Instance.Unsubscribe<NgoLoadSceneCompleteEvent>(OnNgoLoadSceneComplete);
             EventMgr.Instance.Unsubscribe<ShowSettlePanelEvent>(OnShowSettlePanelEvent);
         }
+
+        if (NetworkManager.Singleton)
+        {
+            NetworkManager.Singleton.OnServerStarted -= OnServerStarted;
+            NetworkManager.Singleton.OnServerStopped -= OnServerStopped;
+        }
+    }
+
+    private void OnServerStarted()
+    {
+        
+    }
+
+    private void OnServerStopped(bool obj)
+    {
+        GameController = null;
+        PlayerEnterSceneFlag.Clear();
     }
 
     public void GameReset()

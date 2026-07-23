@@ -164,6 +164,16 @@ public class BoardGameController : MonoBehaviour
     {
         GameFsm?.OnDestroy();
         GameFsm = null;
+
+        RecycleAllObjectsToPool();
+    }
+
+    /// <summary>
+    /// 回收所有物体到对象池
+    /// </summary>
+    private void RecycleAllObjectsToPool()
+    {
+        //List<IPoolObject> objects = GameObject.FindObjectsOfType<>
     }
 
     public Transform GetSeatTransBySeatId(int gameId)

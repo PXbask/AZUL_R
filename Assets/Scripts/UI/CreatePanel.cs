@@ -71,6 +71,16 @@ public class CreatePanel : UIPanel
         UpdateView();
     }
 
+    public override void OnHide()
+    {
+        base.OnHide();
+        TotalPlayerSlider.onValueChanged.RemoveListener(OnTotalPlayerSliderValueChanged);
+        PlayerSlider.onValueChanged.RemoveListener(OnPlayerSliderValueChanged);
+        AiSlider.onValueChanged.RemoveListener(OnAiSliderValueChanged);
+        CreateBtn.onClick.RemoveListener(OnClickCreateBtn);
+        QuitBtn.onClick.RemoveListener(OnClickQuitBtn);
+    }
+
     private void OnTotalPlayerSliderValueChanged(float f)
     {
         TotalPlayerNumText.text = f.ToString();

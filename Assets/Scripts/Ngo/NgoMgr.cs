@@ -249,6 +249,82 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
         NetworkManager.Singleton.StartClient();
     }
 
+    /// <summary>
+    /// 本机玩家主动离开游戏，返回 Menu 场景。
+    /// Host 调用：通知所有 Client 也返回 Menu，再关闭网络。
+    /// Client 调用：通知 Host 后断开连接，本地跳转 Menu。
+    /// </summary>
+    public void LeaveGame()
+    {
+        if (NetworkManager.Singleton == null)
+        {
+            LoadMenuSceneLocal();
+            return;
+        }
+
+        if (NetworkManager.Singleton.IsHost)
+        {
+            // Host 离开：先通知所有 Client 返回 Menu，再自己关闭
+            NotifyAllClientsLeaveGameClientRpc();
+            //ShutdownAndLoadMenu();
+        }
+        else if (NetworkManager.Singleton.IsClient)
+        {
+            // Client 离开：通知 Host 自己离开，再断开
+            NotifyHostLeaveGameServerRpc();
+            ShutdownAndLoadMenu();
+        }
+        else
+        {
+            LoadMenuSceneLocal();
+        }
+    }
+
+    /// <summary>
+    /// 关闭网络并跳转到 Menu 场景（本地操作）
+    /// </summary>
+    private void ShutdownAndLoadMenu()
+    {
+        Debug.Log("[NgoMgr] 断开网络，返回 Menu 场景");
+        StartCoroutine(ShutdownAndLoadMenuCoroutine());
+    }
+
+    private IEnumerator ShutdownAndLoadMenuCoroutine()
+    {
+        NetworkManager.Singleton.Shutdown();
+
+        // 等待 NetworkManager 完全关闭（IsListening 变为 false）
+        float timeout = 5f;
+        float elapsed = 0f;
+        while (NetworkManager.Singleton != null
+               && NetworkManager.Singleton.IsListening
+               && elapsed < timeout)
+        {
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        if (elapsed >= timeout)
+        {
+            Debug.LogWarning("[NgoMgr] Shutdown 超时，强制跳转 Menu");
+        }
+        else
+        {
+            Debug.Log($"IsListening: {NetworkManager.Singleton.IsListening}");
+            Debug.Log("[NgoMgr] NetworkManager 已关闭，跳转 Menu");
+        }
+
+        LoadMenuSceneLocal();
+    }
+
+    /// <summary>
+    /// 直接用 Unity SceneManager 加载 Menu（不经过 NGO，因为此时网络已断开）
+    /// </summary>
+    private void LoadMenuSceneLocal()
+    {
+        UnityEngine.SceneManagement.SceneManager.LoadScene(SceneStatic.MenuSceneName);
+    }
+
     private void OnClientConnected(ulong obj)
     {
         if (!IsHost) return;
@@ -306,6 +382,18 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
 
         //UIMgr.Instance.HideAllPanels();
         //UIMgr.Instance.HideAllPopups();
+    }
+
+    /// <summary>
+    /// Host → 广播所有 Client：强制返回 Menu
+    /// </summary>
+    [ClientRpc]
+    public void NotifyAllClientsLeaveGameClientRpc()
+    {
+        // Host 自身也会收到 ClientRpc，但 ShutdownAndLoadMenu 已在 LeaveGame() 里调用
+        // 只让非 Host 的纯 Client 执行
+        ShutdownAndLoadMenu();
+        UIMgr.Instance.ShowDefaultPopup("房主已离开游戏，返回主菜单");
     }
 
     [ClientRpc]
@@ -382,6 +470,18 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
     {
         UIMgr.Instance.HideAllPanels();
         BoardGameMgr.Instance.GameReset();
+    }
+
+    /// <summary>
+    /// Client → 通知 Host 有玩家主动离开
+    /// </summary>
+    [ServerRpc(RequireOwnership = false)]
+    public void NotifyHostLeaveGameServerRpc(ServerRpcParams rpcParams = default)
+    {
+        ulong clientId = rpcParams.Receive.SenderClientId;
+        Debug.Log($"[NgoMgr] Client {clientId} 主动离开游戏");
+        // 可在此处做房间状态清理，例如移除玩家数据
+        EventMgr.Instance?.Trigger(new PlayerLeaveGameEvent { ClientId = (int)clientId });
     }
 
     [ServerRpc(RequireOwnership = false)]

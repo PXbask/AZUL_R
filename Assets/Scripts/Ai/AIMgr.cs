@@ -7,6 +7,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Unity.Netcode;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -24,12 +25,34 @@ public class AIMgr : MonoSingleton<AIMgr>
 
     private void Start()
     {
-        Run();
+        NetworkManager.Singleton.OnServerStarted += OnServerStarted;
+        NetworkManager.Singleton.OnServerStopped += OnServerStopped;
+    }
+
+    private void OnServerStarted()
+    {
+        if(!IsRunning())
+        {
+            Run();
+        }
+    }
+
+    private void OnServerStopped(bool obj)
+    {
+        if(IsRunning())
+        {
+            Stop();
+        }
     }
 
     protected override void OnDestroy()
     {
-        Stop();
+        if (NetworkManager.Singleton != null)
+        {
+            NetworkManager.Singleton.OnServerStarted -= OnServerStarted;
+            NetworkManager.Singleton.OnServerStopped -= OnServerStopped;
+        }
+
         base.OnDestroy();
     }
 
@@ -180,7 +203,7 @@ public class AIMgr : MonoSingleton<AIMgr>
             }
             catch (Exception ex)
             {
-                Debug.LogError($"AI网络错误: {ex.Message}");
+                Debug.LogWarning($"无法连接到AI网络: {ex.Message}");
             }
             finally
             {
