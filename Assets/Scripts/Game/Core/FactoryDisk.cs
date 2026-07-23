@@ -4,7 +4,10 @@ using UnityEngine;
 
 namespace AZUL
 {
-    public class FactoryDisk : MonoBehaviour, IPoolObject
+    /// <summary>
+    /// 工厂圆盘
+    /// </summary>
+    public class FactoryDisk : MonoPoolObject
     {
         [SerializeField]
         private int id;
@@ -14,9 +17,9 @@ namespace AZUL
 
         GUIStyle m_Style;
 
-        public string PoolKey => nameof(FactoryDisk);
+        public override string PoolKey => nameof(FactoryDisk);
 
-        private void Awake()
+        public override void OnCreate()
         {
 #if UNITY_EDITOR
             m_Style = new GUIStyle();
@@ -54,22 +57,6 @@ namespace AZUL
 #if UNITY_EDITOR
             UnityEditor.Handles.Label(transform.position + Vector3.up * 0.5f, $"[{id}]", m_Style);
 #endif
-        }
-
-        public void OnDispose()
-        {
-        }
-
-        public void OnRecycle()
-        {
-        }
-
-        public void OnSpawn()
-        {
-        }
-
-        public void Recycle()
-        {
         }
     }
 }

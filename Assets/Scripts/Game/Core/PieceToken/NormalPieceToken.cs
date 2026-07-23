@@ -4,6 +4,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// 普通Token
+/// </summary>
 public class NormalPieceToken : PieceTokenBase
 {
     [SerializeField]

@@ -32,11 +32,6 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
 
         //注册NetworkPrefabInstanceHandler
         RegisterPrefabHandler();
-
-        if (NetworkManager.Singleton.SceneManager != null)
-        {
-            NetworkManager.Singleton.SceneManager.OnLoadComplete += OnSceneLoadComplete;
-        }
     }
 
     public override void OnNetworkDespawn()
@@ -47,6 +42,19 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
         {
             NetworkManager.Singleton.SceneManager.OnLoadComplete -= OnSceneLoadComplete;
         }
+    }
+
+    /// <summary>
+    /// 统一订阅 SceneManager 事件，避免重复注册
+    /// </summary>
+    private void SubscribeSceneManagerEvents()
+    {
+        var sm = NetworkManager.Singleton.SceneManager;
+        if (sm == null) return;
+
+        sm.OnLoadComplete += OnSceneLoadComplete;
+
+        Debug.Log("[NgoMgr] SceneManager.OnLoadComplete 已订阅");
     }
 
     public override void OnDestroy()
@@ -126,7 +134,7 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
     /// Host 端从对象池取出对象并通过 NGO Spawn（Client 端会自动走 PoolObjectSpawner）
     /// </summary>
     public NetworkObject SpawnFromPool<T>(ulong ownerClientId, Vector3 position, Quaternion rotation, bool destroyWithScene = true, Action<T> beforeSpawn = null)
-        where T : MonoBehaviour, IPoolObject
+        where T : NetPoolObject
     {
         if (!NetworkManager.Singleton.IsHost)
         {
@@ -134,14 +142,11 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
             return null;
         }
 
-        // 获取 PoolKey（通过 T 的实例属性）
-        string poolKey = typeof(T).Name;
-
         // Host 端从对象池取出
-        T obj = PoolMgr.Instance.Spawn<T>(poolKey);
+        T obj = PoolMgr.Instance.SpawnNetObj<T>();
         if (obj == null)
         {
-            Debug.LogError($"[NgoMgr] 对象池 Spawn 失败，Key={poolKey}");
+            Debug.LogError($"[NgoMgr] 对象池 Spawn 失败");
             return null;
         }
 
@@ -149,9 +154,16 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
         beforeSpawn?.Invoke(obj);
 
         NetworkObject netObj = obj.GetComponent<NetworkObject>();
-        netObj.SpawnWithOwnership(ownerClientId, destroyWithScene);
-
-        return netObj;
+        if (netObj != null)
+        {
+            netObj.SpawnWithOwnership(ownerClientId, destroyWithScene);
+            return netObj;
+        }
+        else
+        {
+            Debug.LogError($"[NgoMgr] 对象 {obj.name} 没有 NetworkObject 组件，无法 Spawn");
+            return null;
+        }
     }
 
     private void OnCreateLobby(CreateLobbyEvent e)
@@ -177,6 +189,8 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
         };
 
         NetworkManager.Singleton.StartHost();
+        SubscribeSceneManagerEvents();
+
         NgoLoadScene(SceneStatic.LobbySceneName);
     }
 
@@ -247,6 +261,7 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
         }
 
         NetworkManager.Singleton.StartClient();
+        SubscribeSceneManagerEvents();
     }
 
     /// <summary>
@@ -322,7 +337,7 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
     /// </summary>
     private void LoadMenuSceneLocal()
     {
-        UnityEngine.SceneManagement.SceneManager.LoadScene(SceneStatic.MenuSceneName);
+        SceneMgr.Instance.LoadScene(SceneStatic.MenuSceneName);
     }
 
     private void OnClientConnected(ulong obj)
@@ -383,6 +398,8 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
         //UIMgr.Instance.HideAllPanels();
         //UIMgr.Instance.HideAllPopups();
     }
+
+#region RPCs
 
     /// <summary>
     /// Host → 广播所有 Client：强制返回 Menu
@@ -502,3 +519,5 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
         BoardGameMgr.Instance.ClientEnterBoardGameScene(clientId);
     }
 }
+
+#endregion

@@ -14,7 +14,7 @@ public interface IPieceToken
 
     void GotoArea(IPlaceTokenArea area);
 }
-public abstract class PieceTokenBase : MonoBehaviour, IPieceToken, IPoolObject
+public abstract class PieceTokenBase : MonoPoolObject, IPieceToken
 {
     [SerializeField]
     private IPlaceTokenArea m_PlaceTokenArea = null;
@@ -34,32 +34,35 @@ public abstract class PieceTokenBase : MonoBehaviour, IPieceToken, IPoolObject
 
     public Transform Transform => transform;
 
-    public virtual string PoolKey => nameof(PieceTokenBase);
+    public override string PoolKey => nameof(PieceTokenBase);
 
     protected Tween m_GotoAreaTween = null;
 
-    public virtual void OnSpawn()
+    public override void OnSpawn()
     {
+        base.OnSpawn();
         m_GotoAreaTween = null;
     }
 
-    public virtual void OnRecycle()
+    public override void OnRecycle()
+    {
+        base.OnRecycle();
+        KillAnims();
+    }
+
+    public override void OnDispose()
+    {
+        base.OnDispose();
+        KillAnims();
+    }
+
+    private void KillAnims()
     {
         if (m_GotoAreaTween != null)
         {
             m_GotoAreaTween.Kill();
             m_GotoAreaTween = null;
         }
-    }
-
-    public virtual void OnDispose()
-    {
-        
-    }
-
-    public virtual void Recycle()
-    {
-        
     }
 
     public virtual void GotoArea(IPlaceTokenArea area)

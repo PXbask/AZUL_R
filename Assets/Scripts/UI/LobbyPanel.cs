@@ -30,22 +30,35 @@ public class LobbyPanel : MonoBehaviour
 
     private void OnEnable()
     {
+        EventMgr.Instance.Subscribe(NoneArgEventEnum.ClearSceneObjectEvent, OnClearScene);
         EventMgr.Instance.Subscribe(NoneArgEventEnum.PlayerStateChangeEvent, OnPlayerStateChange);
+        StartBtn.onClick.AddListener(OnStartBtnClicked);
+        QuitBtn.onClick.AddListener(OnQuitBtnClicked);
     }
 
     private void Start()
     {
-        StartBtn.onClick.AddListener(OnStartBtnClicked);
-        QuitBtn.onClick.AddListener(OnQuitBtnClicked);
         UpdateView();
     }
 
     private void OnDisable()
     {
-        if(EventMgr.Instance != null)
+        StartBtn.onClick.RemoveListener(OnStartBtnClicked);
+        QuitBtn.onClick.RemoveListener(OnQuitBtnClicked);
+        if (EventMgr.Instance != null)
         {
             EventMgr.Instance.Unsubscribe(NoneArgEventEnum.PlayerStateChangeEvent, OnPlayerStateChange);
+            EventMgr.Instance.Unsubscribe(NoneArgEventEnum.ClearSceneObjectEvent, OnClearScene);
         }
+    }
+
+    private void OnClearScene()
+    {
+        foreach (var item in ActiveItems)
+        {
+            item.Recycle();
+        }
+        ActiveItems.Clear();
     }
 
     private void OnStartBtnClicked()
@@ -111,6 +124,7 @@ public class LobbyPanel : MonoBehaviour
         }
         else
         {
+            StartBtn.interactable = true;
             StartBtn.interactable = NetworkManager.Singleton.IsHost;
             StartBtnText.text = "开始游戏";
         }

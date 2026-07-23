@@ -51,7 +51,7 @@ public class PoolMgr : MonoSingleton<PoolMgr>
                 Register(com.PoolKey, entry.prefab, entry.maxSize);
 
                 //将网络预制体存入，等待NgoMgr处理
-                if(entry.prefab.GetComponent<NetworkObject>() != null)
+                if(entry.prefab.GetComponent<NetPoolObject>() != null)
                 {
                     if (!NetworkObjectPrefabList.Contains(entry.prefab))
                     {
@@ -88,6 +88,8 @@ public class PoolMgr : MonoSingleton<PoolMgr>
         {
             GameObject go = Instantiate(prefab, _poolRoot);
             IPoolObject obj = go.GetComponent<IPoolObject>();
+            obj?.OnCreate();
+
             go.SetActive(false);
             queue.Enqueue(go);
         }
@@ -128,6 +130,20 @@ public class PoolMgr : MonoSingleton<PoolMgr>
         (obj as MonoBehaviour).gameObject.SetActive(true);
         obj.OnSpawn();
         return obj;
+    }
+
+    /// <summary>
+    /// 专供网络对象使用：从池中取出但不 SetActive，
+    /// 由 NGO 的 SpawnWithOwnership 控制激活时机
+    /// </summary>
+    public T SpawnNetObj<T>() where T : NetPoolObject
+    {
+        string key = typeof(T).Name;
+        IPoolObject obj = GetOrCreate(key, null, false);
+        if (obj == null) return null;
+        (obj as MonoBehaviour).gameObject.SetActive(true);
+        obj.OnSpawn();
+        return obj as T;
     }
 
     /// <summary>归还对象到池</summary>
@@ -209,13 +225,17 @@ public class PoolMgr : MonoSingleton<PoolMgr>
 
     #region 内部
 
-    private IPoolObject GetOrCreate(string key, Transform parent)
+    private IPoolObject GetOrCreate(string key, Transform parent, bool isNetObj = false)
     {
         // 从池中取
         if (_pools.TryGetValue(key, out Queue<GameObject> queue) && queue.Count > 0)
         {
             GameObject pooled = queue.Dequeue();
-            pooled.transform.SetParent(parent != null ? parent : _poolRoot);
+
+            var par = parent != null ? parent : _poolRoot;
+            par = isNetObj ? null : par;
+
+            pooled.transform.SetParent(par);
             return pooled.GetComponent<IPoolObject>();
         }
 
@@ -234,7 +254,11 @@ public class PoolMgr : MonoSingleton<PoolMgr>
             Destroy(go);
             return null;
         }
-        return obj;
+        else
+        {
+            obj.OnCreate();
+            return obj;
+        }
     }
 
     protected override void OnDestroy()

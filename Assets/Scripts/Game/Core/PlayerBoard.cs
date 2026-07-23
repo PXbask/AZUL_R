@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace AZUL
 {
-    public class PlayerBoard : MonoBehaviour, IPoolObject
+    public class PlayerBoard : MonoPoolObject
     {
         [SerializeField]
         private Transform ScoreTrans;
@@ -46,7 +46,7 @@ namespace AZUL
         /// </summary>
         public List<LosePlaceTokenArea> LosePlaceTokenAreas = new List<LosePlaceTokenArea>();
 
-        public string PoolKey => nameof(PlayerBoard);
+        public override string PoolKey => nameof(PlayerBoard);
 
         public void Init(int seatId)
         {
@@ -204,26 +204,6 @@ namespace AZUL
                 var lst = new List<ColoredPlaceTokenArea>(); ;
                 RightPlaceTokenAreas.Add(lst);
             }
-        }
-
-        public void OnDispose()
-        {
-            
-        }
-
-        public void OnRecycle()
-        {
-            
-        }
-
-        public void OnSpawn()
-        {
-            
-        }
-
-        public void Recycle()
-        {
-            
         }
 
         public PlayerBoardData GetPlayerBoardData()

@@ -5,6 +5,9 @@ using UnityEngine;
 
 namespace AZUL
 {
+    /// <summary>
+    /// 分数Token
+    /// </summary>
     public class ScorePieceToken : PieceTokenBase
     {
         [SerializeField]

@@ -5,23 +5,32 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class PlayerDataItem : MonoBehaviour, IPoolObject
+/// <summary>
+/// 匹配房间中玩家数据的 UI 显示项
+/// </summary>
+public class PlayerDataItem : MonoPoolObject
 {
-
     [SerializeField]
     private TMPro.TextMeshProUGUI NameText;
 
     [SerializeField]
     private Toggle ReadyToggle;
 
-    string IPoolObject.PoolKey => nameof(PlayerDataItem);
+    private PlayerData m_PlayerData;
 
-    private void Start()
+    public override string PoolKey => nameof(PlayerDataItem);
+
+    public override void OnCreate()
     {
         ReadyToggle.onValueChanged.AddListener(OnReadyToggleChanged);
     }
 
-    private void OnDestroy()
+    public override void OnSpawn()
+    {
+        ReadyToggle.SetIsOnWithoutNotify(false);
+    }
+
+    public override void OnDispose()
     {
         ReadyToggle.onValueChanged.RemoveListener(OnReadyToggleChanged);
     }
@@ -30,29 +39,17 @@ public class PlayerDataItem : MonoBehaviour, IPoolObject
     {
         if (ReadyToggle.interactable)
         {
-            NgoMgr.Instance.ChangePlayerReadyStateServerRpc((int)NetworkManager.Singleton.LocalClientId, b);
+            NgoMgr.Instance.ChangePlayerReadyStateServerRpc(m_PlayerData.ClientId, b);
         }
     }
 
     public void UpdateView(PlayerData data)
     {
+        m_PlayerData = data;
+
         NameText.text = data.Name.ToString();
         ReadyToggle.isOn = data.IsReady;
 
         ReadyToggle.interactable = data.ClientId == (int)NetworkManager.Singleton.LocalClientId;
-    }
-
-    public void OnSpawn() { }
-
-    public void OnRecycle()
-    {
-        ReadyToggle.SetIsOnWithoutNotify(false);
-    }
-
-    public void OnDispose() { }
-
-    public void Recycle()
-    {
-        PoolMgr.Instance.Recycle(this);
     }
 }

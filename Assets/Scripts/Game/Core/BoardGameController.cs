@@ -52,6 +52,17 @@ public class BoardGameController : MonoBehaviour
 
     public int CurrentPlayerSeatId { get; private set; }
 
+    private void Start()
+    {
+        EventMgr.Instance.Subscribe(NoneArgEventEnum.ClearSceneObjectEvent, OnClearScene);
+    }
+
+    private void OnClearScene()
+    {
+        ClearAllTokenBoards();
+        ClearAllPieceTokens();
+    }
+
     public void Init()
     {
         GameTableDic.Clear();
@@ -81,28 +92,8 @@ public class BoardGameController : MonoBehaviour
 
     public void GameReset()
     {
-        //清除所有棋子
-        for(int i = 0; i < BoardGamePlayerDic.Count; i++)
-        {
-            var player = BoardGamePlayerDic[i];
-            player.PlayerBoard.ResetBoard();
-        }
-
-        for(int i = 0;i < FactoryDiskDic.Count; i++)
-        {
-            var item = FactoryDiskDic[i];
-            for (int j = 0; j < item.PlaceTokenAreas.Count; j++)
-            {
-                var area = item.GetArea(j);
-                area.ResetObject();
-            }
-        }
-
-        for (int i = 0; i < MidTablePlaceAreas.Count; i++)
-        {
-            var area = MidTablePlaceAreas[i];
-            area.ResetObject();
-        }
+        //不回收板块，因为板块是固定的，只有Token会被清除
+        ClearAllPieceTokens();
 
         ResetRound();
         GameFsm.HostChangeState(FsmStateType.Idle);
@@ -118,6 +109,52 @@ public class BoardGameController : MonoBehaviour
         }
 
         ResetAllPlayerControllerTrans();
+    }
+
+    /// <summary>
+    /// 清除所有Token
+    /// </summary>
+    private void ClearAllPieceTokens()
+    {
+        for (int i = 0; i < BoardGamePlayerDic.Count; i++)
+        {
+            var player = BoardGamePlayerDic[i];
+            player.PlayerBoard.ResetBoard();
+        }
+
+        for (int i = 0; i < FactoryDiskDic.Count; i++)
+        {
+            var item = FactoryDiskDic[i];
+            for (int j = 0; j < item.PlaceTokenAreas.Count; j++)
+            {
+                var area = item.GetArea(j);
+                area.ResetObject();
+            }
+        }
+
+        for (int i = 0; i < MidTablePlaceAreas.Count; i++)
+        {
+            var area = MidTablePlaceAreas[i];
+            area.ResetObject();
+        }
+    }
+
+    /// <summary>
+    /// 清除所有游戏板块
+    /// </summary>
+    private void ClearAllTokenBoards()
+    {
+        for (int i = 0; i < BoardGamePlayerDic.Count; i++)
+        {
+            var player = BoardGamePlayerDic[i];
+            player.PlayerBoard.Recycle();
+        }
+
+        for (int i = 0; i < FactoryDiskDic.Count; i++)
+        {
+            var item = FactoryDiskDic[i];
+            item.Recycle();
+        }
     }
 
     private void InitGameFsm()
@@ -165,15 +202,7 @@ public class BoardGameController : MonoBehaviour
         GameFsm?.OnDestroy();
         GameFsm = null;
 
-        RecycleAllObjectsToPool();
-    }
-
-    /// <summary>
-    /// 回收所有物体到对象池
-    /// </summary>
-    private void RecycleAllObjectsToPool()
-    {
-        //List<IPoolObject> objects = GameObject.FindObjectsOfType<>
+        EventMgr.Instance?.Unsubscribe(NoneArgEventEnum.ClearSceneObjectEvent, OnClearScene);
     }
 
     public Transform GetSeatTransBySeatId(int gameId)
@@ -576,6 +605,7 @@ public class BoardGameController : MonoBehaviour
             clientId >= 0 ? (ulong)clientId : NetworkManager.Singleton.LocalClientId,
             seatTrans.position,
             seatTrans.rotation);
+
         var pc = obj.GetComponent<PlayerController>();
         pc.PlayerData.Value = PlayerMgr.Instance.GetPlayerDataBySeatId(seatId);
     }

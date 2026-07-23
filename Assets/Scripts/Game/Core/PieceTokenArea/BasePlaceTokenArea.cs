@@ -114,7 +114,8 @@ namespace AZUL
         {
             if(IsEmpty()) return;
 
-            PoolMgr.Instance.Recycle(Token as PieceTokenBase);
+            MonoPoolObject poolObj = Token as MonoPoolObject;
+            poolObj.Recycle();
             RemoveToken();
         }
     }

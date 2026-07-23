@@ -5,6 +5,9 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// 结算面板
+/// </summary>
 public class SettlePanel : UIPanel
 {
     [SerializeField]
@@ -27,50 +30,20 @@ public class SettlePanel : UIPanel
 
     public override string PoolKey => nameof(SettlePanel);
 
-    public override void OnInit()
+    protected override void OnInit()
     {
+        base.OnInit();
+        m_HideBtn.gameObject.SetActive(true);
+        m_ShowBtn.gameObject.SetActive(false);
+
         m_RestartBtn.onClick.AddListener(OnClickRestartBtn);
         m_HideBtn.onClick.AddListener(OnClickHideBtn);
         m_ShowBtn.onClick.AddListener(OnClickShowBtn);
     }
 
-    private void OnClickRestartBtn()
+    protected override void OnShow(object data)
     {
-        NgoMgr.Instance.GameResetClientRpc();
-    }
-
-    private void OnClickHideBtn()
-    {
-        HidePanel();
-    }
-
-    private void HidePanel()
-    {
-        m_CanvasGroup.alpha = 0;
-        m_CanvasGroup.interactable = false;
-        m_CanvasGroup.blocksRaycasts = false;
-
-        m_HideBtn.gameObject.SetActive(false);
-        m_ShowBtn.gameObject.SetActive(true);
-    }
-
-    private void OnClickShowBtn()
-    {
-        ShowPanel();
-    }
-
-    private void ShowPanel()
-    {
-        m_CanvasGroup.alpha = 1;
-        m_CanvasGroup.interactable = true;
-        m_CanvasGroup.blocksRaycasts = true;
-
-        m_HideBtn.gameObject.SetActive(true);
-        m_ShowBtn.gameObject.SetActive(false);
-    }
-
-    public override void OnShow(object data)
-    {
+        base.OnShow(data);
         ShowPanel();
 
         bool host = NetworkManager.Singleton.IsHost;
@@ -86,7 +59,7 @@ public class SettlePanel : UIPanel
             {
                 for (int j = 0; j < ntf.PlayerDataList.Length; j++)
                 {
-                    if(ntf.PlayerDataList[j].SeatId == ntf.WinnerSeatIds[i])
+                    if (ntf.PlayerDataList[j].SeatId == ntf.WinnerSeatIds[i])
                     {
                         winners.Add(ntf.PlayerDataList[j]);
                         continue;
@@ -95,7 +68,7 @@ public class SettlePanel : UIPanel
             }
 
             List<string> winnerNames = new List<string>();
-            for (int i = 0;i<winners.Count;i++)
+            for (int i = 0; i < winners.Count; i++)
             {
                 winnerNames.Add(winners[i].Name.ToString());
             }
@@ -119,6 +92,48 @@ public class SettlePanel : UIPanel
         {
             Debug.LogError("ShowSettlePanelEvent is null"); return;
         }
+    }
 
+    protected override void OnRemove()
+    {
+        base.OnRemove();
+        m_RestartBtn.onClick.RemoveListener(OnClickRestartBtn);
+        m_HideBtn.onClick.RemoveListener(OnClickHideBtn);
+        m_ShowBtn.onClick.RemoveListener(OnClickShowBtn);
+    }
+
+    private void OnClickRestartBtn()
+    {
+        NgoMgr.Instance.GameResetClientRpc();
+    }
+
+    private void OnClickHideBtn()
+    {
+        HidePanel();
+    }
+
+    private void OnClickShowBtn()
+    {
+        ShowPanel();
+    }
+
+    private void ShowPanel()
+    {
+        m_CanvasGroup.alpha = 1;
+        m_CanvasGroup.interactable = true;
+        m_CanvasGroup.blocksRaycasts = true;
+
+        m_HideBtn.gameObject.SetActive(true);
+        m_ShowBtn.gameObject.SetActive(false);
+    }
+
+    private void HidePanel()
+    {
+        m_CanvasGroup.alpha = 0;
+        m_CanvasGroup.interactable = false;
+        m_CanvasGroup.blocksRaycasts = false;
+
+        m_HideBtn.gameObject.SetActive(false);
+        m_ShowBtn.gameObject.SetActive(true);
     }
 }

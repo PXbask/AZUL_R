@@ -5,6 +5,9 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// 创建房间面板
+/// </summary>
 public class CreatePanel : UIPanel
 {
     [SerializeField]
@@ -39,14 +42,15 @@ public class CreatePanel : UIPanel
 
     public override string PoolKey => nameof(CreatePanel);
 
-    public override void OnShow(object data)
+    protected override void OnInit()
     {
-        base.OnShow(data);
+        base.OnInit();
 
-        //暂时不写Ai相关逻辑
-        AiPort.placeholder.GetComponent<TextMeshProUGUI>().text = GameStatic.AiDefaultPort.ToString();
+        TextMeshProUGUI tmpText = AiPort.placeholder.GetComponent<TextMeshProUGUI>();
+        tmpText.text = GameStatic.AiDefaultPort.ToString();
 
-        PlayerPort.placeholder.GetComponent<TextMeshProUGUI>().text = GameStatic.NgoDefaultPort.ToString();
+        tmpText = PlayerPort.placeholder.GetComponent<TextMeshProUGUI>();
+        tmpText.text = GameStatic.NgoDefaultPort.ToString();
 
         TotalPlayerSlider.minValue = GameStatic.MinPlayerNum;
         TotalPlayerSlider.maxValue = GameStatic.MaxPlayerNum;
@@ -61,19 +65,26 @@ public class CreatePanel : UIPanel
         AiSlider.maxValue = GameStatic.MaxPlayerNum;
         AiSlider.onValueChanged.AddListener(OnAiSliderValueChanged);
 
+        CreateBtn.onClick.AddListener(OnClickCreateBtn);
+        QuitBtn.onClick.AddListener(OnClickQuitBtn);
+    }
+
+    protected override void OnShow(object data)
+    {
+        base.OnShow(data);
+
         TotalPlayerSlider.value = GameStatic.MinPlayerNum;
         PlayerSlider.value = 1;
         AiSlider.value = 1;
         TotalPlayerSlider.onValueChanged.Invoke(TotalPlayerSlider.value);
 
-        CreateBtn.onClick.AddListener(OnClickCreateBtn);
-        QuitBtn.onClick.AddListener(OnClickQuitBtn);
         UpdateView();
     }
 
-    public override void OnHide()
+    protected override void OnRemove()
     {
-        base.OnHide();
+        base.OnRemove();
+
         TotalPlayerSlider.onValueChanged.RemoveListener(OnTotalPlayerSliderValueChanged);
         PlayerSlider.onValueChanged.RemoveListener(OnPlayerSliderValueChanged);
         AiSlider.onValueChanged.RemoveListener(OnAiSliderValueChanged);

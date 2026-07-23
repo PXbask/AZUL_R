@@ -5,6 +5,9 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// 弹窗面板
+/// </summary>
 public class PopupPanel : UIPanel
 {
     [SerializeField]
@@ -21,21 +24,21 @@ public class PopupPanel : UIPanel
 
     public override string PoolKey => nameof(PopupPanel);
 
-    public void Awake()
+    protected override void OnInit()
     {
         m_OriginAlpha = BgImage.color.a;
     }
-    public override void OnShow(object data)
+
+    protected override void OnShow(object data)
     {
         base.OnShow(data);
 
         string content = data as string;
-        TipRoot.anchoredPosition = Vector2.zero;
         if(content != null)
         {
             TipText.text = content;
         }
-        BgImage.color = new Color(BgImage.color.r, BgImage.color.g, BgImage.color.b, m_OriginAlpha);
+        ResetAnims();
 
         m_ShowSequence = DOTween.Sequence();
         m_ShowSequence.AppendInterval(0.5f);
@@ -46,11 +49,30 @@ public class PopupPanel : UIPanel
         m_ShowSequence.Play();
     }
 
-    public override void OnHide()
+    protected override void OnHide()
     {
         base.OnHide();
 
-        if(m_ShowSequence != null)
+        KillAnims();
+    }
+
+    protected override void OnRemove()
+    {
+        base.OnRemove();
+
+        KillAnims();
+    }
+
+    private void ResetAnims()
+    {
+        KillAnims();
+        TipRoot.anchoredPosition = Vector2.zero;
+        BgImage.color = new Color(BgImage.color.r, BgImage.color.g, BgImage.color.b, m_OriginAlpha);
+    }
+
+    private void KillAnims()
+    {
+        if (m_ShowSequence != null)
         {
             m_ShowSequence.Kill();
             m_ShowSequence = null;

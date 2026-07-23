@@ -5,6 +5,9 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// 加入房间面板
+/// </summary>
 public class JoinPanel : UIPanel
 {
     [SerializeField]
@@ -21,14 +24,23 @@ public class JoinPanel : UIPanel
 
     public override string PoolKey => nameof(JoinPanel);
 
-    public override void OnShow(object data)
+    protected override void OnInit()
     {
-        base.OnShow(data);
+        base.OnInit();
 
         JoinBtn.onClick.AddListener(OnClickJoinBtn);
         QuitBtn.onClick.AddListener(OnClickQuitBtn);
 
-        ServerPortField.placeholder.GetComponent<TextMeshProUGUI>().text = GameStatic.NgoDefaultPort.ToString();
+        var ipPlaceholderText = ServerIpField.placeholder.GetComponent<TextMeshProUGUI>();
+        ipPlaceholderText.text = GameStatic.NgoDefaultPort.ToString();
+    }
+
+    protected override void OnRemove()
+    {
+        base.OnRemove();
+
+        JoinBtn.onClick.RemoveListener(OnClickJoinBtn);
+        QuitBtn.onClick.RemoveListener(OnClickQuitBtn);
     }
 
     private void OnClickJoinBtn()
@@ -57,6 +69,6 @@ public class JoinPanel : UIPanel
 
     private void OnClickQuitBtn()
     {
-        UIMgr.Instance.HideTopPanel();
+        Hide();
     }
 }

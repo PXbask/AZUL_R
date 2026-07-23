@@ -8,4 +8,8 @@ public enum NoneArgEventEnum : int
     PlayerStateChangeEvent,
     GameReset,
     FsmSyncEvent,
+    /// <summary>
+    /// 即将切换场景，清除场景对象
+    /// </summary>
+    ClearSceneObjectEvent,
 }

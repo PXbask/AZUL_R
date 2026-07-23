@@ -5,7 +5,10 @@ using TMPro;
 using Unity.Netcode;
 using UnityEngine;
 
-public class PlayerController : NetworkBehaviour, IPoolObject
+/// <summary>
+/// Ngo玩家控制器
+/// </summary>
+public class PlayerController : NetPoolObject
 {
     [SerializeField]
     private Camera Camera;
@@ -34,6 +37,8 @@ public class PlayerController : NetworkBehaviour, IPoolObject
     public override void OnNetworkDespawn()
     {
         base.OnNetworkDespawn();
+        PlayerData.OnValueChanged += OnPlayerDataChanged;
+
         if (PlayerData.Value.PlayerType == PlayerType.Human &&
             AllHuman.ContainsKey(OwnerClientId))
             AllHuman.Remove(OwnerClientId);
@@ -65,7 +70,7 @@ public class PlayerController : NetworkBehaviour, IPoolObject
         NetworkManager.Singleton != null &&
         AllHuman.TryGetValue(NetworkManager.Singleton.LocalClientId, out var pc) ? pc : null;
 
-    public string PoolKey => nameof(PlayerController);
+    public override string PoolKey => nameof(PlayerController);
 
     public static PlayerController Get(ulong clientId) =>
         AllHuman.TryGetValue(clientId, out var pc) ? pc : null;
@@ -95,22 +100,6 @@ public class PlayerController : NetworkBehaviour, IPoolObject
         if (direction.sqrMagnitude < 0.0001f) return;
 
         NameCanvas.transform.rotation = Quaternion.LookRotation(-direction);
-    }
-
-    public void OnSpawn()
-    {
-    }
-
-    public void OnRecycle()
-    {
-    }
-
-    public void OnDispose()
-    {
-    }
-
-    public void Recycle()
-    {
     }
 
     public Camera GetPlayerCamera() => Camera;

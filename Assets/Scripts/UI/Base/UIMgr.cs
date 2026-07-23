@@ -18,9 +18,6 @@ public class UIMgr : MonoSingleton<UIMgr>
     // 弹窗栈
     private readonly LinkedList<UIPanel> _popupStack = new LinkedList<UIPanel>();
 
-    // 已初始化过的面板集合（OnInit 只调用一次）
-    private readonly HashSet<string> _initializedKeys = new HashSet<string>();
-
     #region 注册
 
     /// <summary>
@@ -176,13 +173,13 @@ public class UIMgr : MonoSingleton<UIMgr>
     private void Update()
     {
         // 更新主面板栈顶
-        _panelStack.Last?.Value.OnUpdate();
+        _panelStack.Last?.Value.PanelUpdate();
 
         // 更新所有弹窗
         var node = _popupStack.First;
         while (node != null)
         {
-            node.Value.OnUpdate();
+            node.Value.PanelUpdate();
             node = node.Next;
         }
     }
@@ -196,12 +193,8 @@ public class UIMgr : MonoSingleton<UIMgr>
         UIPanel panel = PoolMgr.Instance.Spawn<UIPanel>(panelName, _uiRoot);
         if (panel == null) return null;
 
-        panel.SetPanelName(panelName);
+        panel.PanelName = panelName;
         panel.IsPopup = isPopup;
-
-        // OnInit 只执行一次
-        if (_initializedKeys.Add(panelName))
-            panel.OnInit();
 
         return panel;
     }
@@ -215,13 +208,13 @@ public class UIMgr : MonoSingleton<UIMgr>
     {
         panel.gameObject.SetActive(true);
         panel.transform.SetParent(_uiRoot, worldPositionStays: false);
-        panel.OnShow(data);
+        panel.PanelShow(data);
     }
 
     /// <param name="temporary">true = 被压栈暂时隐藏，不回池；false = 正式关闭，回池</param>
     private void HideTopInternal(UIPanel panel, bool temporary)
     {
-        panel.OnHide();
+        panel.PanelHide();
         if (!temporary)
             ReturnToPool(panel);
         else
@@ -252,7 +245,6 @@ public class UIMgr : MonoSingleton<UIMgr>
     {
         HideAllPopups();
         HideAllPanels();
-        _initializedKeys.Clear();
     }
 
     protected override void OnDestroy()
