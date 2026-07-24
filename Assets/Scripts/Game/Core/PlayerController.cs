@@ -37,7 +37,7 @@ public class PlayerController : NetPoolObject
     public override void OnNetworkDespawn()
     {
         base.OnNetworkDespawn();
-        PlayerData.OnValueChanged += OnPlayerDataChanged;
+        PlayerData.OnValueChanged -= OnPlayerDataChanged;
 
         if (PlayerData.Value.PlayerType == PlayerType.Human &&
             AllHuman.ContainsKey(OwnerClientId))
@@ -46,7 +46,7 @@ public class PlayerController : NetPoolObject
 
     private void OnPlayerDataChanged(PlayerData previousValue, PlayerData newValue)
     {
-        if (newValue.PlayerType == previousValue.PlayerType) return;
+        if (newValue == previousValue) return;
 
         All[newValue.ClientId] = this;
         bool isHuman = newValue.PlayerType == PlayerType.Human;
@@ -77,7 +77,7 @@ public class PlayerController : NetPoolObject
 
     private void LateUpdate()
     {
-        if (IsOwner) return;
+        if (IsOwner && PlayerData.Value.PlayerType == PlayerType.Human) return;
 
         var LocalPlayerObj = Local;
         if (LocalPlayerObj == null) return;

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
-public class PoolObjectSpawner<T> : INetworkPrefabInstanceHandler where T : MonoBehaviour, IPoolObject
+public class PoolObjectSpawner<T> : INetworkPrefabInstanceHandler where T : NetPoolObject
 {
     private readonly string PoolKey;
 
@@ -16,7 +16,7 @@ public class PoolObjectSpawner<T> : INetworkPrefabInstanceHandler where T : Mono
 
     public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation)
     {
-        T obj = PoolMgr.Instance.Spawn<T>(PoolKey);
+        T obj = PoolMgr.Instance.SpawnNetObj<T>();
         if (obj == null)
         {
             Debug.LogError($"[PoolObjectSpawner<{typeof(T).Name}>] 对象池 Spawn 失败，Key={PoolKey}");

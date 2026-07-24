@@ -139,7 +139,7 @@ public class PoolMgr : MonoSingleton<PoolMgr>
     public T SpawnNetObj<T>() where T : NetPoolObject
     {
         string key = typeof(T).Name;
-        IPoolObject obj = GetOrCreate(key, null, false);
+        IPoolObject obj = GetOrCreate(key, null, true);
         if (obj == null) return null;
         (obj as MonoBehaviour).gameObject.SetActive(true);
         obj.OnSpawn();
@@ -233,9 +233,9 @@ public class PoolMgr : MonoSingleton<PoolMgr>
             GameObject pooled = queue.Dequeue();
 
             var par = parent != null ? parent : _poolRoot;
-            par = isNetObj ? null : par;
+            if(!isNetObj)
+                pooled.transform.SetParent(par);
 
-            pooled.transform.SetParent(par);
             return pooled.GetComponent<IPoolObject>();
         }
 

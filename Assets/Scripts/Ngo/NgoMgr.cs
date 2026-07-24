@@ -156,7 +156,7 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
         NetworkObject netObj = obj.GetComponent<NetworkObject>();
         if (netObj != null)
         {
-            netObj.SpawnWithOwnership(ownerClientId, destroyWithScene);
+            netObj.SpawnAsPlayerObject(ownerClientId, destroyWithScene);
             return netObj;
         }
         else
