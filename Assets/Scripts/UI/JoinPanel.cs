@@ -14,9 +14,6 @@ public class JoinPanel : UIPanel
     private TMP_InputField ServerIpField;
 
     [SerializeField]
-    private TMP_InputField ServerPortField;
-
-    [SerializeField]
     private Button JoinBtn;
 
     [SerializeField]
@@ -32,7 +29,7 @@ public class JoinPanel : UIPanel
         QuitBtn.onClick.AddListener(OnClickQuitBtn);
 
         var ipPlaceholderText = ServerIpField.placeholder.GetComponent<TextMeshProUGUI>();
-        ipPlaceholderText.text = GameStatic.NgoDefaultPort.ToString();
+        ipPlaceholderText.text = $"{GameStatic.LocalIp}:{GameStatic.NgoDefaultPort}";
     }
 
     protected override void OnRemove()
@@ -45,26 +42,32 @@ public class JoinPanel : UIPanel
 
     private void OnClickJoinBtn()
     {
-#if UNITY_EDITOR
-        EventMgr.Instance.Trigger(new JoinLobbyEvent
+        string ipStr = ServerIpField.text;
+        if (string.IsNullOrEmpty(ipStr))
         {
-            IpAddress = GameStatic.LocalIp,
-            Port = GameStatic.NgoDefaultPort
-        });
-#else
-        if (ushort.TryParse(ServerPortField.text, out ushort port))
+            ipStr = $"{GameStatic.LocalIp}:{GameStatic.NgoDefaultPort}";
+        }
+        string[] strs = ipStr.Split(':');
+        if(strs.Length != 2)
+        {
+            UIMgr.Instance.ShowDefaultPopup("输入的格式不符合要求!");
+            return;
+        }
+
+        string ipText = strs[0];
+        string portText = strs[1];
+        if (ushort.TryParse(portText, out ushort port))
         {
             EventMgr.Instance.Trigger(new JoinLobbyEvent
             {
-                IpAddress = ServerIpField.text,
+                IpAddress = ipText,
                 Port = port
             });
         }
         else
         {
-            Debug.LogError($"Invalid port number: {ServerPortField.text}");
+            Debug.LogError($"Invalid port number: {portText}");
         }
-#endif
     }
 
     private void OnClickQuitBtn()
