@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -32,6 +33,8 @@ public class PlayerController : NetPoolObject
     {
         base.OnNetworkSpawn();
         PlayerData.OnValueChanged += OnPlayerDataChanged;
+
+        ApplyPlayerData(PlayerData.Value);
     }
 
     public override void OnNetworkDespawn()
@@ -46,8 +49,11 @@ public class PlayerController : NetPoolObject
 
     private void OnPlayerDataChanged(PlayerData previousValue, PlayerData newValue)
     {
-        if (newValue == previousValue) return;
+        ApplyPlayerData(newValue);
+    }
 
+    private void ApplyPlayerData(PlayerData newValue)
+    {
         All[newValue.ClientId] = this;
         bool isHuman = newValue.PlayerType == PlayerType.Human;
         if (isHuman)

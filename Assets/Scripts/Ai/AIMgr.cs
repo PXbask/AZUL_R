@@ -25,20 +25,22 @@ public class AIMgr : MonoSingleton<AIMgr>
 
     private void Start()
     {
-        NetworkManager.Singleton.OnServerStarted += OnServerStarted;
-        NetworkManager.Singleton.OnServerStopped += OnServerStopped;
+        NetworkManager.Singleton.OnClientStarted += OnClientStarted;
+        NetworkManager.Singleton.OnClientStopped += OnClientStopped;
     }
 
-    private void OnServerStarted()
+    private void OnClientStarted()
     {
-        if(!IsRunning())
+        if (!NetworkManager.Singleton.IsHost) return;
+        if (!IsRunning())
         {
             Run();
         }
     }
 
-    private void OnServerStopped(bool obj)
+    private void OnClientStopped(bool obj)
     {
+        if (!NetworkManager.Singleton.IsHost) return;
         if(IsRunning())
         {
             Stop();
@@ -49,8 +51,8 @@ public class AIMgr : MonoSingleton<AIMgr>
     {
         if (NetworkManager.Singleton != null)
         {
-            NetworkManager.Singleton.OnServerStarted -= OnServerStarted;
-            NetworkManager.Singleton.OnServerStopped -= OnServerStopped;
+            NetworkManager.Singleton.OnClientStarted -= OnClientStarted;
+            NetworkManager.Singleton.OnClientStopped -= OnClientStopped;
         }
 
         base.OnDestroy();

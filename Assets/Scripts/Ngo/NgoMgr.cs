@@ -416,7 +416,6 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
     [ClientRpc]
     public void FsmChangeStateClientRpc(FsmStateType stateType, int data = 0)
     {
-        Debug.Log("触发FsmChangeStateEvent事件");
         EventMgr.Instance?.Trigger(new FsmChangeStateEvent { stateType = stateType, data = data });
     }
 

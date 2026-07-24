@@ -75,19 +75,20 @@ public class EventMgr : MonoSingleton<EventMgr>
             return;
 
         // 拷贝一份，防止监听器内部修改列表
+        Debug.Log($"触发事件:{evt.GetType().Name}");
         Delegate[] snapshot = list.ToArray();
         foreach (Delegate d in snapshot)
         {
             ((Action<T>)d)?.Invoke(evt);
         }
-
-        Debug.Log($"触发事件:{evt.GetType().Name}");
     }
 
     public void Trigger(NoneArgEventEnum evt)
     {
         if (!_noneArgListeners.TryGetValue(evt, out List<Delegate> list) || list.Count == 0)
             return;
+
+        Debug.Log($"触发事件:{evt}");
         Delegate[] snapshot = list.ToArray();
         foreach (Delegate d in snapshot)
         {

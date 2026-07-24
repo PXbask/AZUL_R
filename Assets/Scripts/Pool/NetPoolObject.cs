@@ -38,10 +38,6 @@ public abstract class NetPoolObject : NetworkBehaviour, IPoolObject
     /// </summary>
     public virtual void Recycle()
     {
-        //只有host可以Despawn，client跟随PoolObjectSpawner使用Destroy方法
-        if (IsHost)
-        {
-            NetworkObject.Despawn(false);
-        }
+        PoolMgr.Instance.Recycle(this, true);
     }
 }

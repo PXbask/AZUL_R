@@ -62,10 +62,10 @@ public class FsmMgr<TOwner>
         _cts = new CancellationTokenSource();
 
         EventMgr.Instance?.Subscribe<FsmChangeStateEvent>(OnFsmChangeStateEvent);
+        EventMgr.Instance?.Subscribe(NoneArgEventEnum.FsmSyncEvent, OnFsmSyncEvent);
 
         if (NetworkManager.Singleton && NetworkManager.Singleton.IsHost)
         {
-            EventMgr.Instance?.Subscribe(NoneArgEventEnum.FsmSyncEvent, OnFsmSyncEvent);
             // 创建时启动队列处理循环
             ProcessStateQueueAsync(_cts.Token).Forget();
         }
@@ -110,41 +110,6 @@ public class FsmMgr<TOwner>
 
         state.OnInit(this);
         _states[stateType] = state;
-    }
-
-    /// <summary>
-    /// 移除状态
-    /// </summary>
-    public void RemoveState(FsmStateType stateType)
-    {
-        if (_states.TryGetValue(stateType, out IFsmState<TOwner> state))
-        {
-            if (_currentState == state)
-            {
-                _currentState.OnLeave(this);
-                _currentState = null;
-            }
-            state.OnRelease(this);
-            _states.Remove(stateType);
-        }
-        else
-        {
-            Debug.LogWarning($"[FsmMgr] State {stateType} not found.");
-        }
-    }
-
-    public void RemoveAllStates()
-    {
-        if (_currentState != null)
-        {
-            _currentState.OnLeave(this);
-            _currentState = null;
-        }
-        foreach (var state in _states.Values)
-        {
-            state.OnRelease(this);
-        }
-        _states.Clear();
     }
 
     /// <summary>
@@ -219,10 +184,7 @@ public class FsmMgr<TOwner>
     public void OnDestroy()
     {
         EventMgr.Instance?.Unsubscribe<FsmChangeStateEvent>(OnFsmChangeStateEvent);
-        if (NetworkManager.Singleton && NetworkManager.Singleton.IsHost)
-        {
-            EventMgr.Instance?.Unsubscribe(NoneArgEventEnum.FsmSyncEvent, OnFsmSyncEvent);
-        }
+        EventMgr.Instance?.Unsubscribe(NoneArgEventEnum.FsmSyncEvent, OnFsmSyncEvent);
 
         _cts?.Cancel();
         _cts?.Dispose();

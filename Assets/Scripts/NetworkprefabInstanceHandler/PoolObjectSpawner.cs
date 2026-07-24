@@ -31,7 +31,7 @@ public class PoolObjectSpawner<T> : INetworkPrefabInstanceHandler where T : NetP
         T obj = networkObject.GetComponent<T>();
         if (obj != null)
         {
-            PoolMgr.Instance.Recycle(obj, true);
+            obj.Recycle();
         }
         else
             Object.Destroy(networkObject.gameObject);

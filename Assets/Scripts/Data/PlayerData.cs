@@ -49,4 +49,9 @@ public struct PlayerData : INetworkSerializable
     {
         return System.HashCode.Combine(PlayerType, ClientId, GameId, Name.GetHashCode(), IsReady);
     }
+
+    public override string ToString()
+    {
+        return $"PlayerData {{ PlayerType = {PlayerType}, ClientId = {ClientId}, GameId = {GameId}, Name = {Name}, IsReady = {IsReady} }}";
+    }
 }

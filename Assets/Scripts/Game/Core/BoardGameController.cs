@@ -607,7 +607,9 @@ public class BoardGameController : MonoBehaviour
             seatTrans.rotation);
 
         var pc = obj.GetComponent<PlayerController>();
-        pc.PlayerData.Value = PlayerMgr.Instance.GetPlayerDataBySeatId(seatId);
+
+        var v = PlayerMgr.Instance.GetPlayerDataBySeatId(seatId);
+        pc.PlayerData.Value = v;
     }
 
     /// <summary>

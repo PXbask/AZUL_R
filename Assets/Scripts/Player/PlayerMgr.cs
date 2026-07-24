@@ -14,8 +14,7 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
         EventMgr.Instance.Subscribe<PlayerConnectedEvent>(OnClientConnected);
         EventMgr.Instance.Subscribe<PlayerDisconnectedEvent>(OnClientDisconnected);
 
-        NetworkManager.Singleton.OnServerStarted += OnServerStarted;
-        NetworkManager.Singleton.OnServerStopped += OnServerStopped;
+        NetworkManager.Singleton.OnClientStopped += OnClientStopped;
     }
 
     protected override void OnDestroy()
@@ -28,19 +27,13 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
 
         if (NetworkManager.Singleton != null)
         {
-            NetworkManager.Singleton.OnServerStarted -= OnServerStarted;
-            NetworkManager.Singleton.OnServerStopped -= OnServerStopped;
+            NetworkManager.Singleton.OnClientStopped -= OnClientStopped;
         }
 
         base.OnDestroy();
     }
 
-    private void OnServerStarted()
-    {
-        
-    }
-
-    private void OnServerStopped(bool obj)
+    private void OnClientStopped(bool obj)
     {
         ConnectedPlayerData.Clear();
     }
