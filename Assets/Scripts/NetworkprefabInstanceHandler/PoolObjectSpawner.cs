@@ -23,6 +23,8 @@ public class PoolObjectSpawner<T> : INetworkPrefabInstanceHandler where T : NetP
             return null;
         }
         obj.transform.SetPositionAndRotation(position, rotation);
+        obj.OnClientInstantiate();
+
         return obj.GetComponent<NetworkObject>();
     }
 

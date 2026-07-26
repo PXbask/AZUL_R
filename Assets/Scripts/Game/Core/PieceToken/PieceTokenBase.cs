@@ -47,13 +47,17 @@ public abstract class PieceTokenBase : MonoPoolObject, IPieceToken
     public override void OnRecycle()
     {
         base.OnRecycle();
+
         KillAnims();
+        OwnerPlaceTokenArea = null;
     }
 
     public override void OnDispose()
     {
         base.OnDispose();
+
         KillAnims();
+        OwnerPlaceTokenArea = null;
     }
 
     private void KillAnims()

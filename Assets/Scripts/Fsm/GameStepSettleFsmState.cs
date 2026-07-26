@@ -129,7 +129,6 @@ public class GameStepSettleFsmState : FsmState<BoardGameController>
                         if (midArea != null)
                         {
                             midArea.PlaceToken(loseArea.Token);
-                            loseArea.RemoveToken();
                         }
                     }
                     else

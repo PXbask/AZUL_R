@@ -17,11 +17,7 @@ public class PlayerController : NetPoolObject
     [SerializeField]
     private CameraMovement CameraMovement;
 
-    [SerializeField]
-    private Canvas NameCanvas;
-
-    [SerializeField]
-    private TextMeshProUGUI NameText;
+    private PlayerInfoCanvas m_PlayerInfoCanvas;
 
     public NetworkVariable<PlayerData> PlayerData = new NetworkVariable<PlayerData>(default);
 
@@ -35,6 +31,7 @@ public class PlayerController : NetPoolObject
         PlayerData.OnValueChanged += OnPlayerDataChanged;
 
         ApplyPlayerData(PlayerData.Value);
+        SpawnPlayerInfoCanvas();
     }
 
     public override void OnNetworkDespawn()
@@ -45,6 +42,8 @@ public class PlayerController : NetPoolObject
         if (PlayerData.Value.PlayerType == PlayerType.Human &&
             AllHuman.ContainsKey(OwnerClientId))
             AllHuman.Remove(OwnerClientId);
+
+        RecyclePlayerInfoCanvas();
     }
 
     private void OnPlayerDataChanged(PlayerData previousValue, PlayerData newValue)
@@ -62,13 +61,23 @@ public class PlayerController : NetPoolObject
         }
         Camera.enabled = IsOwner && isHuman;
         CameraMovement.enabled = IsOwner && isHuman;
-
-        UpdateName();
     }
 
-    private void UpdateName()
+    private void SpawnPlayerInfoCanvas()
     {
-        NameText.text = PlayerData.Value.Name.ToString();
+        if (m_PlayerInfoCanvas != null) return;
+
+        m_PlayerInfoCanvas = PoolMgr.Instance.Spawn<PlayerInfoCanvas>();
+        m_PlayerInfoCanvas.PlayerCtrl = this;
+    }
+
+    private void RecyclePlayerInfoCanvas()
+    {
+        if (m_PlayerInfoCanvas != null)
+        {
+            PoolMgr.Instance?.Recycle(m_PlayerInfoCanvas);
+            m_PlayerInfoCanvas = null;
+        }
     }
 
     /// <summary>获取本机自己的 PlayerController</summary>
@@ -80,33 +89,6 @@ public class PlayerController : NetPoolObject
 
     public static PlayerController Get(ulong clientId) =>
         AllHuman.TryGetValue(clientId, out var pc) ? pc : null;
-
-    private void LateUpdate()
-    {
-        if (IsOwner && PlayerData.Value.PlayerType == PlayerType.Human) return;
-
-        var LocalPlayerObj = Local;
-        if (LocalPlayerObj == null) return;
-
-        foreach (var item in All.Values)
-        {
-            item.NameFaceTo(LocalPlayerObj.transform);
-        }
-    }
-
-    private void NameFaceTo(Transform trans)
-    {
-        Vector3 targetPos = trans.position;
-        Vector3 selfPos = NameCanvas.transform.position;
-
-        // 仅保留 Y 轴方向差，忽略高度差
-        Vector3 direction = targetPos - selfPos;
-        direction.y = 0f;
-
-        if (direction.sqrMagnitude < 0.0001f) return;
-
-        NameCanvas.transform.rotation = Quaternion.LookRotation(-direction);
-    }
 
     public Camera GetPlayerCamera() => Camera;
 }

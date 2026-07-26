@@ -28,8 +28,10 @@ MonoBehaviour:
   - prefab: {fileID: 5931887832738610902, guid: 734529a4f57c9e240b7133d458052f6e, type: 3}
     maxSize: 9
   - prefab: {fileID: 2660619739746561028, guid: fefe4d72e1f90eb4fa81c7cb8b0fdf42, type: 3}
-    maxSize: 100
+    maxSize: 50
   - prefab: {fileID: 6712531960756814860, guid: a1f26bacea18882408a1aed0fbb744ff, type: 3}
     maxSize: 5
   - prefab: {fileID: 4527110021641872843, guid: 2af1502c45f2eb34197764216b6ba1ed, type: 3}
     maxSize: 1
+  - prefab: {fileID: 7521312385374605676, guid: 2bf6dd43da2ba374aa25822a3e5ad940, type: 3}
+    maxSize: 4

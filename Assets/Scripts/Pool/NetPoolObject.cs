@@ -40,4 +40,9 @@ public abstract class NetPoolObject : NetworkBehaviour, IPoolObject
     {
         PoolMgr.Instance.Recycle(this, true);
     }
+
+    /// <summary>
+    /// 当客户端通过INetworkPrefabInstanceHandler实例化出实体后调用
+    /// </summary>
+    public virtual void OnClientInstantiate() { }
 }
