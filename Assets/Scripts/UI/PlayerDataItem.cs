@@ -16,6 +16,9 @@ public class PlayerDataItem : MonoPoolObject
     [SerializeField]
     private Toggle ReadyToggle;
 
+    [SerializeField]
+    private Image AvatarImg;
+
     private PlayerData m_PlayerData;
 
     public override string PoolKey => nameof(PlayerDataItem);
@@ -49,6 +52,7 @@ public class PlayerDataItem : MonoPoolObject
 
         NameText.text = data.Name.ToString();
         ReadyToggle.isOn = data.IsReady;
+        AvatarImg.sprite = DataMgr.Instance.GetLocalAvatarSprite(data.AvatarId.ToString());
 
         ReadyToggle.interactable = data.ClientId == (int)NetworkManager.Singleton.LocalClientId;
     }

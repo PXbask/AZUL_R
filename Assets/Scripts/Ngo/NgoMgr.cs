@@ -38,6 +38,7 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
     {
         base.OnNetworkDespawn();
 
+        RemovePrefabHandler();
         if (NetworkManager.Singleton != null && NetworkManager.Singleton.SceneManager != null)
         {
             NetworkManager.Singleton.SceneManager.OnLoadComplete -= OnSceneLoadComplete;
@@ -127,6 +128,15 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
             //_registeredHandlers[prefab] = handler;
 
             Debug.Log($"[NgoMgr] 注册 PrefabHandler: {prefab.name} → PoolObjectSpawner<{concreteType.Name}> Key={poolKey}");
+        }
+    }
+
+    private void RemovePrefabHandler()
+    {
+        var lst = PoolMgr.Instance.NetworkObjectPrefabList;
+        foreach (var prefab in lst)
+        {
+           NetworkManager.Singleton.PrefabHandler.RemoveHandler(prefab);
         }
     }
 
@@ -342,10 +352,15 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
 
     private void OnClientConnected(ulong obj)
     {
-        if (!IsHost) return;
-
-        Debug.Log($"Client connected with ID: {obj}");
-        EventMgr.Instance.Trigger(new PlayerConnectedEvent { ClientId = obj });
+        if(obj == NetworkManager.Singleton.LocalClientId)
+        {
+            Debug.Log($"本机玩家已连接，ClientId: {obj}");
+            EventMgr.Instance.Trigger(new LocalClientConnectedEvent { ClientId = obj });
+        }
+        else
+        {
+            Debug.Log($"检测到新玩家连接，ClientId: {obj}");
+        }
     }
 
     private void OnClientDisconnected(ulong obj)
@@ -497,6 +512,14 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
     {
         UIMgr.Instance.HideAllPanels();
         BoardGameMgr.Instance.GameReset();
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    public void NotifyAddPlayerServerRpc(int clientId,  PlayerLocalInfoData data)
+    {
+        if (!NetworkManager.Singleton.IsHost) return;
+
+        PlayerMgr.Instance.AddPlayer(clientId, data);
     }
 
     /// <summary>

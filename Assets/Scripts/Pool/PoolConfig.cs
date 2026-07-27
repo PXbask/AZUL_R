@@ -16,9 +16,9 @@ public class PoolConfigEntry
 
 /// <summary>
 /// 对象池配置文件（ScriptableObject）
-/// 在 Project 窗口右键 -> Create -> Pool -> PoolConfig 创建资产
+/// 在 Project 窗口右键 -> Create -> Cfg -> PoolConfig 创建资产
 /// </summary>
-[CreateAssetMenu(menuName = "Pool/PoolConfig", fileName = "PoolConfig")]
+[CreateAssetMenu(menuName = "Cfg/PoolConfig", fileName = "PoolConfig")]
 public class PoolConfig : ScriptableObject
 {
     public List<PoolConfigEntry> entries = new List<PoolConfigEntry>();

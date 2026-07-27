@@ -11,7 +11,6 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
 
     private void Start()
     {
-        EventMgr.Instance.Subscribe<PlayerConnectedEvent>(OnClientConnected);
         EventMgr.Instance.Subscribe<PlayerDisconnectedEvent>(OnClientDisconnected);
 
         NetworkManager.Singleton.OnClientStopped += OnClientStopped;
@@ -21,7 +20,6 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
     {
         if (EventMgr.Instance != null)
         {
-            EventMgr.Instance.Unsubscribe<PlayerConnectedEvent>(OnClientConnected);
             EventMgr.Instance.Unsubscribe<PlayerDisconnectedEvent>(OnClientDisconnected);
         }
 
@@ -38,20 +36,16 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
         ConnectedPlayerData.Clear();
     }
 
-    private void OnClientConnected(PlayerConnectedEvent e)
-    {
-        Debug.Log($"检测到玩家连接: {e.ClientId}");
-        AddPlayer((int)e.ClientId);
-    }
-
     private void OnClientDisconnected(PlayerDisconnectedEvent e)
     {
         Debug.Log($"检测到玩家断开连接: {e.ClientId}");
         RemovePlayer((int)e.ClientId);
     }
 
-    public void AddPlayer(int clientId)
+    public void AddPlayer(int clientId, PlayerLocalInfoData data)
     {
+        Debug.Log($"AddPlayer clientId: {clientId}, PlayerLocalInfoData: {data}");
+
         if (!NetworkManager.Singleton.IsHost)
         {
             Debug.LogError("Only host can add player.");
@@ -63,15 +57,16 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
             return;
         }
 
-        PlayerData data = new PlayerData()
+        PlayerData playerData = new PlayerData()
         {
             PlayerType = PlayerType.Human,
             ClientId = (int)clientId,
             GameId = ConnectedPlayerData.Count,
-            Name = string.Format("Human [{0}]", clientId),
+            Name = data.Name.ToString(),
+            AvatarId = data.AvatarId.ToString(),
             IsReady = false,
         };
-        ConnectedPlayerData[clientId] = data;
+        ConnectedPlayerData[clientId] = playerData;
 
         if (clientId == (int)NetworkManager.Singleton.LocalClientId)
         {
@@ -85,6 +80,7 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
                     ClientId = fakeClientId,
                     GameId = ConnectedPlayerData.Count,
                     Name = string.Format("Ai [{0}]", fakeClientId),
+                    AvatarId = GameStatic.DefaultAvatarId,
                     IsReady = true,
                 };
                 ConnectedPlayerData[fakeClientId] = tdata;
@@ -107,6 +103,7 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
         }
         else
         {
+            PlayerData data = ConnectedPlayerData[clientId];
             ConnectedPlayerData.Remove(clientId);
 
             //如果是host移除左右Ai玩家
@@ -132,7 +129,8 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
                         PlayerType = PlayerType.AI,
                         ClientId = fakeClientId,
                         GameId = value.GameId,
-                        Name = string.Format("Ai [{0}]", fakeClientId),
+                        Name = data.Name,
+                        AvatarId = data.AvatarId,
                         IsReady = true,
                     };
                     ConnectedPlayerData[fakeClientId] = tdata;

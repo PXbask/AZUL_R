@@ -15,6 +15,7 @@ public struct PlayerData : INetworkSerializable
     public int ClientId;
     public int GameId;
     public FixedString64Bytes Name;
+    public FixedString64Bytes AvatarId;
     public bool IsReady;
 
     public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
@@ -23,6 +24,7 @@ public struct PlayerData : INetworkSerializable
         serializer.SerializeValue(ref ClientId);
         serializer.SerializeValue(ref GameId);
         serializer.SerializeValue(ref Name);
+        serializer.SerializeValue(ref AvatarId);
         serializer.SerializeValue(ref IsReady);
     }
 

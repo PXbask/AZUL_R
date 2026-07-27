@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -14,11 +15,20 @@ public class MenuPanel : MonoBehaviour
     [SerializeField]
     private Button QuitBtn;
 
+    [SerializeField]
+    private Button SettingBtn;
+
     private void OnEnable()
     {
         CreateBtn.onClick.AddListener(OnCreateBtnClick);
         JoinBtn.onClick.AddListener(OnJoinBtnClick);
         QuitBtn.onClick.AddListener(OnQuitBtnClick);
+        SettingBtn.onClick.AddListener(OnSettingBtnClick);
+    }
+
+    private void OnSettingBtnClick()
+    {
+        UIMgr.Instance.ShowPanel(UIStatic.SettingPanelName);
     }
 
     private void OnCreateBtnClick()

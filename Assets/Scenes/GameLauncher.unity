@@ -965,6 +965,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d9352f8eca0d5b040b5e131c92a858da, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  localAvatarConfig: {fileID: 11400000, guid: 14dbb0bfab9440c49af3bc430bb59be3, type: 2}
 --- !u!4 &1453762147
 Transform:
   m_ObjectHideFlags: 0
@@ -1040,7 +1041,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 22400762, guid: 67117722a812a2e46ab8cb8eafbf5f5e, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -0.000011444092
+      value: -0.000019073486
       objectReference: {fileID: 0}
     - target: {fileID: 22426080, guid: 67117722a812a2e46ab8cb8eafbf5f5e, type: 3}
       propertyPath: m_AnchorMax.x

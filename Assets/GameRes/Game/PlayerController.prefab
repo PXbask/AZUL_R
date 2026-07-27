@@ -226,8 +226,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Camera: {fileID: 8523324278792026727}
   CameraMovement: {fileID: 2700630736878471023}
-  NameCanvas: {fileID: 0}
-  NameText: {fileID: 0}
+  PlayerModel: {fileID: 742664248816317835}
 --- !u!114 &-1170879996723453541
 MonoBehaviour:
   m_ObjectHideFlags: 0

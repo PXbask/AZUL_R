@@ -21,4 +21,7 @@ public static class GameStatic
     public static readonly int LoseAreaRowId = -1;
 
     public static readonly int NullPieceId = -1;
+
+    public static readonly string DefaultPlayerName = "Player";
+    public static readonly string DefaultAvatarId = "默认头像";
 }

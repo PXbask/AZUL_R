@@ -17,6 +17,9 @@ public class PlayerController : NetPoolObject
     [SerializeField]
     private CameraMovement CameraMovement;
 
+    [SerializeField]
+    private GameObject PlayerModel;
+
     private PlayerInfoCanvas m_PlayerInfoCanvas;
 
     public NetworkVariable<PlayerData> PlayerData = new NetworkVariable<PlayerData>(default);
@@ -49,8 +52,15 @@ public class PlayerController : NetPoolObject
             PlayerData.Value = default;
     }
 
+    public override void OnCreate()
+    {
+        base.OnCreate();
+        PlayerModel.SetActive(false);
+    }
+
     private void OnPlayerDataChanged(PlayerData previousValue, PlayerData newValue)
     {
+        Debug.Log($"PlayerData changed for ClientId {OwnerClientId}: {previousValue} -> {newValue}");
         ApplyPlayerData(newValue);
     }
 

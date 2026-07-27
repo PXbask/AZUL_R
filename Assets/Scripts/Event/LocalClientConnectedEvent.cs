@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PlayerConnectedEvent : EventBase
+public class LocalClientConnectedEvent : EventBase
 {
     public ulong ClientId;
 }

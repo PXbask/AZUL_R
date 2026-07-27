@@ -1,11 +1,15 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class PlayerInfoCanvas : MonoPoolObject
 {
     [SerializeField]
     private TMPro.TextMeshProUGUI playerNameText;
+
+    [SerializeField]
+    private Image playerAvatarImg;
 
     [SerializeField]
     private PlayerController m_PlayerCtrl;
@@ -23,6 +27,7 @@ public class PlayerInfoCanvas : MonoPoolObject
             else
             {
                 playerNameText.text = string.Empty;
+                playerAvatarImg.sprite = null;
             }
         }
     }
@@ -30,6 +35,7 @@ public class PlayerInfoCanvas : MonoPoolObject
     private void OnPlayerDataChanged(PlayerData previousValue, PlayerData newValue)
     {
         playerNameText.text = newValue.Name.ToString();
+        playerAvatarImg.sprite = DataMgr.Instance.GetLocalAvatarSprite(newValue.AvatarId.ToString());
     }
 
     public override void OnSpawn()
@@ -37,6 +43,7 @@ public class PlayerInfoCanvas : MonoPoolObject
         base.OnSpawn();
 
         playerNameText.text = string.Empty;
+        playerAvatarImg.sprite = null;
     }
 
     public override void OnRecycle()
