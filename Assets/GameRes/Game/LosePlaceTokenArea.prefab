@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 7896430440683368625}
   - component: {fileID: 3049502988900407998}
   m_Layer: 0
-  m_Name: LosePlaceTokenArea_0
+  m_Name: LosePlaceTokenArea
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
