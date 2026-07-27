@@ -40,11 +40,13 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
 
     private void OnClientConnected(PlayerConnectedEvent e)
     {
+        Debug.Log($"检测到玩家连接: {e.ClientId}");
         AddPlayer((int)e.ClientId);
     }
 
     private void OnClientDisconnected(PlayerDisconnectedEvent e)
     {
+        Debug.Log($"检测到玩家断开连接: {e.ClientId}");
         RemovePlayer((int)e.ClientId);
     }
 
@@ -101,12 +103,13 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
         }
         if (!ConnectedPlayerData.TryGetValue(clientId, out PlayerData value))
         {
-            Debug.Log($"PlayerDataDict does not contain clientId {clientId}");
+            Debug.LogWarning($"PlayerDataDict does not contain clientId {clientId}");
         }
         else
         {
             ConnectedPlayerData.Remove(clientId);
 
+            //如果是host移除左右Ai玩家
             if (clientId == (int)NetworkManager.Singleton.LocalClientId)
             {
                 //移除Ai玩家
@@ -114,6 +117,27 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
                 {
                     int fakeClientId = -i - 1;
                     ConnectedPlayerData.Remove(fakeClientId);
+                }
+            }
+            else
+            {
+                //如果是其他玩家 而且目前在游戏中 使用Ai玩家顶替(托管)
+                if (GameMgr.Instance.IsInGame)
+                {
+                    var currentAiNum = GameMgr.Instance.LobbyConfig.AiNum + 1;
+
+                    int fakeClientId = -currentAiNum;
+                    PlayerData tdata = new PlayerData()
+                    {
+                        PlayerType = PlayerType.AI,
+                        ClientId = fakeClientId,
+                        GameId = value.GameId,
+                        Name = string.Format("Ai [{0}]", fakeClientId),
+                        IsReady = true,
+                    };
+                    ConnectedPlayerData[fakeClientId] = tdata;
+
+                    NgoMgr.Instance.ReplaceHumanByAIPlayerClientRpc(value.GameId, clientId, fakeClientId);
                 }
             }
 

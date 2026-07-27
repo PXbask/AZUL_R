@@ -5,11 +5,13 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
+using static Unity.VisualScripting.Member;
 
 public class PlayerTurnFsmState : FsmState<BoardGameController>
 {
     private int m_SeatId;
     private int m_MySeatId;
+    private bool m_IsSendOperation;
 
     private NormalPieceToken m_SelectedPieceToken;
     private BoardGameController m_Owner;
@@ -18,11 +20,13 @@ public class PlayerTurnFsmState : FsmState<BoardGameController>
     {
         base.OnEnter(fsm, data);
         m_Owner = fsm.Owner;
+        m_IsSendOperation = false;
 
         EventMgr.Instance.Subscribe<ReceiveAIServerMsgEvent>(OnReceiveAIServerMsgEvent);
         EventMgr.Instance.Subscribe<PlayerDoActionEvent>(OnPlayerDoAction);
+        EventMgr.Instance.Subscribe<ReplaceHumanByAIPlayerCompleteEvent>(OnReplaceHumanByAIPlayerComplete);
 
-        if(data != null)
+        if (data != null)
             m_SeatId = (int)data;
         else
             Debug.LogError("PlayerTurnFsmState OnEnter data is null!");
@@ -44,8 +48,7 @@ public class PlayerTurnFsmState : FsmState<BoardGameController>
         {
             if(PlayerMgr.Instance.GetPlayerDataBySeatId(m_SeatId).PlayerType == PlayerType.AI)
             {
-                //如果是AI玩家的回合，向AI服务器发送信息
-                BoardGameMgr.Instance.SendCurrentBoardInfoToAIServer(m_SeatId);
+                TrySendCurrentBoardInfoToAIServerOnce(m_SeatId);
             }
         }
     }
@@ -73,6 +76,7 @@ public class PlayerTurnFsmState : FsmState<BoardGameController>
         base.OnLeave(fsm);
         EventMgr.Instance?.Unsubscribe<PlayerDoActionEvent>(OnPlayerDoAction);
         EventMgr.Instance?.Unsubscribe<ReceiveAIServerMsgEvent>(OnReceiveAIServerMsgEvent);
+        EventMgr.Instance?.Unsubscribe<ReplaceHumanByAIPlayerCompleteEvent>(OnReplaceHumanByAIPlayerComplete);
         ClearSelectedPieceTokenWithAnim();
     }
 
@@ -87,6 +91,19 @@ public class PlayerTurnFsmState : FsmState<BoardGameController>
         }
 
         NgoMgr.Instance.ClientDoActionServerRpc(e.AIAction);
+    }
+
+    private void OnReplaceHumanByAIPlayerComplete(ReplaceHumanByAIPlayerCompleteEvent e)
+    {
+        if (e.SeatId != m_SeatId) return;
+
+        if (NetworkManager.Singleton.IsHost)
+        {
+            if (PlayerMgr.Instance.GetPlayerDataBySeatId(m_SeatId).PlayerType == PlayerType.AI)
+            {
+                TrySendCurrentBoardInfoToAIServerOnce(m_SeatId);
+            }
+        }
     }
 
     private void OnPlayerDoAction(PlayerDoActionEvent e)
@@ -104,7 +121,7 @@ public class PlayerTurnFsmState : FsmState<BoardGameController>
 
     private void HandleMouseClick()
     {
-        Camera cam = PlayerController.Get(NetworkManager.Singleton.LocalClientId).GetPlayerCamera();
+        Camera cam = PlayerController.GetHuman(NetworkManager.Singleton.LocalClientId).GetPlayerCamera();
         if (cam == null)
         {
             Debug.LogWarning("Main Camera is null, cannot perform raycast.");
@@ -221,15 +238,14 @@ public class PlayerTurnFsmState : FsmState<BoardGameController>
             {
                 sourceId = GameStatic.MidTableRowId;
             }
+
             //可以放置了
-            NgoMgr.Instance.ClientDoActionServerRpc(new PlayerActionData
-            {
-                ClientId = player.ClientId,
-                SeatId = player.SeatId,
-                FactoryId = sourceId,
-                ColorType = (PieceColorType)pieceToken.PieceData.PieceTokenType,
-                Row = posData.Row
-            });
+            TrySendOperationToServerOnce(
+                player.ClientId,
+                player.SeatId,
+                sourceId,
+                (PieceColorType)pieceToken.PieceData.PieceTokenType,
+                posData.Row);
         }
         //目标位置是减分区域
         else
@@ -244,15 +260,46 @@ public class PlayerTurnFsmState : FsmState<BoardGameController>
             {
                 sourceId = GameStatic.MidTableRowId;
             }
+
             //可以放置了
+            TrySendOperationToServerOnce(
+                player.ClientId,
+                player.SeatId,
+                sourceId,
+                (PieceColorType)pieceToken.PieceData.PieceTokenType,
+                GameStatic.LoseAreaRowId);
+        }
+    }
+
+    /// <summary>
+    /// 尝试将操作发送到服务器, 保证只发送一次操作
+    /// </summary>
+    private void TrySendOperationToServerOnce(int clientId, int seatId, int factoryId, PieceColorType colorType, int row)
+    {
+        if (!m_IsSendOperation)
+        {
+            m_IsSendOperation = true;
             NgoMgr.Instance.ClientDoActionServerRpc(new PlayerActionData
             {
-                ClientId = player.ClientId,
-                SeatId = player.SeatId,
-                FactoryId = sourceId,
-                ColorType = (PieceColorType)pieceToken.PieceData.PieceTokenType,
-                Row = GameStatic.LoseAreaRowId //减分区域没有行的概念，传-1表示
+                ClientId = clientId,
+                SeatId = seatId,
+                FactoryId = factoryId,
+                ColorType = colorType,
+                Row = row
             });
+        }
+        else
+        {
+            UIMgr.Instance.ShowDefaultPopup("操作已发送，请等待回合结束");
+        }
+    }
+
+    private void TrySendCurrentBoardInfoToAIServerOnce(int seatId)
+    {
+        if (!m_IsSendOperation)
+        {
+            m_IsSendOperation = true;
+            BoardGameMgr.Instance.SendCurrentBoardInfoToAIServer(seatId);
         }
     }
 

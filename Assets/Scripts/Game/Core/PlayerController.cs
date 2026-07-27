@@ -106,7 +106,7 @@ public class PlayerController : NetPoolObject
 
     public override string PoolKey => nameof(PlayerController);
 
-    public static PlayerController Get(ulong clientId) =>
+    public static PlayerController GetHuman(ulong clientId) =>
         AllHuman.TryGetValue(clientId, out var pc) ? pc : null;
 
     public Camera GetPlayerCamera() => Camera;

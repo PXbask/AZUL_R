@@ -414,6 +414,17 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
     }
 
     [ClientRpc]
+    public void ReplaceHumanByAIPlayerClientRpc(int seatId, int humanClientId, int aiClientId)
+    {
+        EventMgr.Instance?.Trigger(new ReplaceHumanByAIPlayerEvent
+        {
+            SeatId = seatId,
+            HumanClientId = humanClientId,
+            AIClientId = aiClientId
+        });
+    }
+
+    [ClientRpc]
     public void FsmChangeStateClientRpc(FsmStateType stateType, int data = 0)
     {
         EventMgr.Instance?.Trigger(new FsmChangeStateEvent { stateType = stateType, data = data });

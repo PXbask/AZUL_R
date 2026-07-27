@@ -1,4 +1,4 @@
-#if UNITY_EDITOR
+﻿#if UNITY_EDITOR
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -31,6 +31,9 @@ public static class GameLauncherEditor
         EditorApplication.isPlaying = true;
 
         Debug.Log($"[GameLauncherEditor] Opened '{scenePath}' and started Play mode.");
+
+        string batPath = "C:\\Users\\PXbask\\OneDrive\\桌面\\Server\\start_server.bat";
+        RunBatFile(batPath);
     }
 
     [MenuItem(MenuPath, true)]
@@ -38,6 +41,39 @@ public static class GameLauncherEditor
     {
         // Play 模式中禁用该菜单项
         return !EditorApplication.isPlaying;
+    }
+
+    private static void RunBatFile(string path)
+    {
+        if (!System.IO.File.Exists(path))
+        {
+            Debug.LogError($"[GameLauncherEditor] .bat file not found at path: {path}");
+            return;
+        }
+        //如果该文件运行中，先杀掉该进程
+        var processName = System.IO.Path.GetFileNameWithoutExtension(path);
+        var runningProcesses = System.Diagnostics.Process.GetProcessesByName(processName);
+        foreach (var process in runningProcesses)
+        {
+            try
+            {
+                process.Kill();
+                Debug.Log($"[GameLauncherEditor] Killed running process: {process.ProcessName} (ID: {process.Id})");
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[GameLauncherEditor] Failed to kill process: {process.ProcessName} (ID: {process.Id}). Exception: {ex.Message}");
+            }
+        }
+        try
+        {
+            System.Diagnostics.Process.Start(path);
+            Debug.Log($"[GameLauncherEditor] Launched .bat file: {path}");
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"[GameLauncherEditor] Failed to launch .bat file: {path}. Exception: {ex.Message}");
+        }
     }
 }
 #endif
