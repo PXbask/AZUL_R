@@ -269,8 +269,6 @@ public class PlayerTurnFsmState : FsmState<BoardGameController>
             if (firstToken != null)
             {
                 //需要把首位token放入减分区
-                var loseAreas_fiestToken = BoardGameUtility.GetEmptyTokenAreaInLoseArea(player.PlayerBoard);
-                //MovePieceToSubLoseArea(new List<PieceToken> { firstToken }, loseAreas_fiestToken);
                 MoveFirstTokenToSub(firstToken, action);
             }
 
@@ -279,14 +277,14 @@ public class PlayerTurnFsmState : FsmState<BoardGameController>
             if (action.Row == GameStatic.LoseAreaRowId)
             {
                 //说明目的地是弃牌区
-                var loseAreas = BoardGameUtility.GetEmptyTokenAreaInLoseArea(player.PlayerBoard);
+                var loseAreas = BoardGameUtility.GetEmptyAreaInSubArea(player.PlayerBoard);
                 MovePieceToSubLoseArea(allSameColorTokens, loseAreas);
             }
             else
             {
                 //说明目的地是花砖区行
                 var leftAreas = BoardGameUtility.GetEmptyTokenAreaInManualAreaInRow(player.PlayerBoard, action.Row);
-                var loseAreas = BoardGameUtility.GetEmptyTokenAreaInLoseArea(player.PlayerBoard);
+                var loseAreas = BoardGameUtility.GetEmptyAreaInSubArea(player.PlayerBoard);
                 MovePieceListToManualSubLoseArea(allSameColorTokens, leftAreas, loseAreas);
             }
         }
@@ -298,7 +296,7 @@ public class PlayerTurnFsmState : FsmState<BoardGameController>
             if (action.Row == GameStatic.LoseAreaRowId)
             {
                 //说明目的地是弃牌区
-                var loseAreas = BoardGameUtility.GetEmptyTokenAreaInLoseArea(player.PlayerBoard);
+                var loseAreas = BoardGameUtility.GetEmptyAreaInSubArea(player.PlayerBoard);
                 MovePieceToSubLoseArea(allSameColorTokens, loseAreas);
                 //将工厂圆盘内剩余token放入中间区域
                 int remainCount = remainTokens.Count;
@@ -312,7 +310,7 @@ public class PlayerTurnFsmState : FsmState<BoardGameController>
             {
                 //说明目的地是花砖区行
                 var leftAreas = BoardGameUtility.GetEmptyTokenAreaInManualAreaInRow(player.PlayerBoard, action.Row);
-                var loseAreas = BoardGameUtility.GetEmptyTokenAreaInLoseArea(player.PlayerBoard);
+                var loseAreas = BoardGameUtility.GetEmptyAreaInSubArea(player.PlayerBoard);
                 MovePieceListToManualSubLoseArea(allSameColorTokens, leftAreas, loseAreas);
                 //将工厂圆盘内剩余token放入中间区域
                 int remainCount = remainTokens.Count;
@@ -391,47 +389,48 @@ public class PlayerTurnFsmState : FsmState<BoardGameController>
     public void MoveFirstTokenToSub(NormalPieceToken token, PlayerActionData action)
     {
         var player = m_Owner.GetBoardGamePlayerBySeatId(action.SeatId);
-        var loseAreas = BoardGameUtility.GetEmptyTokenAreaInLoseArea(player.PlayerBoard);
-        if (loseAreas.Count == 0)
+        var subAreas = BoardGameUtility.GetEmptyAreaInSubArea(player.PlayerBoard);
+        if (subAreas.Count == 0)
         {
-            var area = BoardGameUtility.GetLastAreaInLoseArea(player.PlayerBoard);
-            if (area != null)
+            var area = BoardGameUtility.GetLastAreaInSubArea(player.PlayerBoard);
+            if (area != null && area.Token != null)
             {
-                if (area.Token != null)
+                if (area.Token is NormalPieceToken pieceToken)
                 {
-                    if (area.Token is NormalPieceToken pieceToken)
-                    {
-                        LosePiece(pieceToken);
-                        area.PlaceToken(token);
-                    }
+                    LosePiece(pieceToken);
+                    area.PlaceToken(token);
+                }
+                else
+                {
+                    Debug.LogError("The token in the last sub area is not a NormalPieceToken.");
                 }
             }
         }
         else
         {
-            MovePieceToSubLoseArea(new List<NormalPieceToken>() { token }, loseAreas);
+            MovePieceToSubLoseArea(new List<NormalPieceToken>() { token }, subAreas);
         }
     }
 
-    private void MovePieceToSubLoseArea(List<NormalPieceToken> allSameColorTokens, List<LosePlaceTokenArea> remainLoseAreas)
+    private void MovePieceToSubLoseArea(List<NormalPieceToken> allSameColorTokens, List<LosePlaceTokenArea> remainSubAreas)
     {
         //如果减分区域可以容纳所有相同颜色棋子，就放到减分区域；
-        if (allSameColorTokens.Count <= remainLoseAreas.Count)
+        if (allSameColorTokens.Count <= remainSubAreas.Count)
         {
             for (int i = 0; i < allSameColorTokens.Count; i++)
             {
-                remainLoseAreas[i].PlaceToken(allSameColorTokens[i]);
+                remainSubAreas[i].PlaceToken(allSameColorTokens[i]);
             }
         }
         //如果连减分区域放不下了，就先放满减分区域，剩余的放入弃牌区
         else
         {
-            for (int i = 0; i < remainLoseAreas.Count; i++)
+            for (int i = 0; i < remainSubAreas.Count; i++)
             {
-                remainLoseAreas[i].PlaceToken(allSameColorTokens[i]);
+                remainSubAreas[i].PlaceToken(allSameColorTokens[i]);
             }
             //剩余的放入弃牌区
-            for (int i = remainLoseAreas.Count; i < allSameColorTokens.Count; i++)
+            for (int i = remainSubAreas.Count; i < allSameColorTokens.Count; i++)
             {
                 LosePiece(allSameColorTokens[i]);
             }

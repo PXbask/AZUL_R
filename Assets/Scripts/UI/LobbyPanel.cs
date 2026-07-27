@@ -102,6 +102,7 @@ public class LobbyPanel : MonoBehaviour
             }
 
             item.transform.SetParent(PlayerDataRoot, false);
+            item.transform.localScale = Vector3.one;
             item.UpdateView(dataList[i]);
         }
 

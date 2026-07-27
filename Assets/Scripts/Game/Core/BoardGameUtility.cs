@@ -67,7 +67,7 @@ public static class BoardGameUtility
     /// <summary>
     /// 获取指定行的减分区域空间的所有空闲TokenArea
     /// </summary>
-    public static List<LosePlaceTokenArea> GetEmptyTokenAreaInLoseArea(PlayerBoard board)
+    public static List<LosePlaceTokenArea> GetEmptyAreaInSubArea(PlayerBoard board)
     {
         var result = new List<LosePlaceTokenArea>();
         foreach (var area in board.LosePlaceTokenAreas)
@@ -83,7 +83,7 @@ public static class BoardGameUtility
     /// <summary>
     /// 获取减分区的最后一个区域
     /// </summary>
-    public static LosePlaceTokenArea GetLastAreaInLoseArea(PlayerBoard playerBoard)
+    public static LosePlaceTokenArea GetLastAreaInSubArea(PlayerBoard playerBoard)
     {
         return playerBoard.LosePlaceTokenAreas[^1];
     }

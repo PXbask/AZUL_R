@@ -81,9 +81,26 @@ public class PlayerController : NetPoolObject
     }
 
     /// <summary>获取本机自己的 PlayerController</summary>
-    public static PlayerController Local =>
-        NetworkManager.Singleton != null &&
-        AllHuman.TryGetValue(NetworkManager.Singleton.LocalClientId, out var pc) ? pc : null;
+    public static PlayerController Local
+    {
+        get
+        {
+            if (NetworkManager.Singleton == null)
+            {
+                Debug.LogWarning("NetworkManager.Singleton is null. Cannot get local PlayerController.");
+                return null;
+            }
+            if(AllHuman.TryGetValue(NetworkManager.Singleton.LocalClientId, out var pc))
+            {
+                return pc;
+            }
+            else
+            {
+                Debug.LogError($"Local PlayerController not found for clientId {NetworkManager.Singleton.LocalClientId}.");
+                return null;
+            }
+        }
+    }
 
     public override string PoolKey => nameof(PlayerController);
 
