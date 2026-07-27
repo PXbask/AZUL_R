@@ -13,17 +13,17 @@ MonoBehaviour:
   m_Name: PoolConfig
   m_EditorClassIdentifier: 
   entries:
-  - prefab: {fileID: 9091658443000090819, guid: 6ef803d0a89d3894abb9cb198db537a2, type: 3}
+  - prefab: {fileID: 714493016795082573, guid: 6ef803d0a89d3894abb9cb198db537a2, type: 3}
     maxSize: 1
-  - prefab: {fileID: 7526805208437359555, guid: ad5b79e110f9fc741abf71ef4a8677eb, type: 3}
+  - prefab: {fileID: 9041516653505215064, guid: ad5b79e110f9fc741abf71ef4a8677eb, type: 3}
     maxSize: 1
-  - prefab: {fileID: 2721219336023826585, guid: da0777797f7b55740b53b1bb74c7aff6, type: 3}
+  - prefab: {fileID: 1838063318298283824, guid: da0777797f7b55740b53b1bb74c7aff6, type: 3}
     maxSize: 6
   - prefab: {fileID: 2467254679056225505, guid: 5fd5123d6167d0c43a3682fb71492c9f, type: 3}
     maxSize: 4
   - prefab: {fileID: 7727652169414026981, guid: fd0f171b1adae4343a70ffbccd494c4e, type: 3}
     maxSize: 4
-  - prefab: {fileID: 1334209855931052655, guid: a04da901fd991814f89ed82c85ee393b, type: 3}
+  - prefab: {fileID: 7389678694092314980, guid: a04da901fd991814f89ed82c85ee393b, type: 3}
     maxSize: 10
   - prefab: {fileID: 5931887832738610902, guid: 734529a4f57c9e240b7133d458052f6e, type: 3}
     maxSize: 9
@@ -31,7 +31,7 @@ MonoBehaviour:
     maxSize: 100
   - prefab: {fileID: 6712531960756814860, guid: a1f26bacea18882408a1aed0fbb744ff, type: 3}
     maxSize: 5
-  - prefab: {fileID: 4527110021641872843, guid: 2af1502c45f2eb34197764216b6ba1ed, type: 3}
+  - prefab: {fileID: 343755609208984151, guid: 2af1502c45f2eb34197764216b6ba1ed, type: 3}
     maxSize: 1
-  - prefab: {fileID: 7521312385374605676, guid: 2bf6dd43da2ba374aa25822a3e5ad940, type: 3}
+  - prefab: {fileID: 3827545101067525747, guid: 2bf6dd43da2ba374aa25822a3e5ad940, type: 3}
     maxSize: 4
