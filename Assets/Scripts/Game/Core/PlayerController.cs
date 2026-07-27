@@ -44,6 +44,9 @@ public class PlayerController : NetPoolObject
             AllHuman.Remove(OwnerClientId);
 
         RecyclePlayerInfoCanvas();
+
+        if (IsHost && PlayerData != null)
+            PlayerData.Value = default;
     }
 
     private void OnPlayerDataChanged(PlayerData previousValue, PlayerData newValue)
@@ -96,7 +99,6 @@ public class PlayerController : NetPoolObject
             }
             else
             {
-                Debug.LogError($"Local PlayerController not found for clientId {NetworkManager.Singleton.LocalClientId}.");
                 return null;
             }
         }
