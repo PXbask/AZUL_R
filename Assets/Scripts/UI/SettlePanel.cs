@@ -49,19 +49,22 @@ public class SettlePanel : UIPanel
         bool host = NetworkManager.Singleton.IsHost;
         m_RestartBtn.interactable = host;
 
-        ShowSettlePanelEvent e = data as ShowSettlePanelEvent;
-        GameResultNtf ntf;
-        if (e != null)
+        GameResultNtf ntf = data as GameResultNtf;
+        SetPanelInfo(ntf);
+    }
+
+    private void SetPanelInfo(GameResultNtf ntf)
+    {
+        if (ntf != null)
         {
-            ntf = e.ntf;
-            List<BoardGamePlayerData> winners = new List<BoardGamePlayerData>();
-            for (int i = 0; i < ntf.WinnerSeatIds.Length; i++)
+            List<NetBoardGamePlayerData> winners = new List<NetBoardGamePlayerData>();
+            for (int i = 0; i < ntf.WinnerIds.Count; i++)
             {
-                for (int j = 0; j < ntf.PlayerDataList.Length; j++)
+                for (int j = 0; j < ntf.PlayerDatas.Count; j++)
                 {
-                    if (ntf.PlayerDataList[j].SeatId == ntf.WinnerSeatIds[i])
+                    if (ntf.PlayerDatas[j].PlayerSeatId == ntf.WinnerIds[i])
                     {
-                        winners.Add(ntf.PlayerDataList[j]);
+                        winners.Add(ntf.PlayerDatas[j]);
                         continue;
                     }
                 }
@@ -70,17 +73,17 @@ public class SettlePanel : UIPanel
             List<string> winnerNames = new List<string>();
             for (int i = 0; i < winners.Count; i++)
             {
-                winnerNames.Add(winners[i].Name.ToString());
+                winnerNames.Add(winners[i].PlayerName.ToString());
             }
 
             m_ResultText.text = string.Join("、", winnerNames) + "获胜";
 
             for (int i = 0; i < m_RankTexts.Count; i++)
             {
-                if (i < ntf.PlayerDataList.Length)
+                if (i < ntf.PlayerDatas.Count)
                 {
                     m_RankTexts[i].gameObject.SetActive(true);
-                    m_RankTexts[i].text = ntf.PlayerDataList[i].Name.ToString() + "：" + ntf.PlayerDataList[i].Score + "分";
+                    m_RankTexts[i].text = ntf.PlayerDatas[i].PlayerName.ToString() + "：" + ntf.PlayerDatas[i].PlayerScore + "分";
                 }
                 else
                 {
@@ -90,7 +93,8 @@ public class SettlePanel : UIPanel
         }
         else
         {
-            Debug.LogError("ShowSettlePanelEvent is null"); return;
+            Debug.LogError("GameResultNtf is null");
+            return;
         }
     }
 

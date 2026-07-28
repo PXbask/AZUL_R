@@ -2,7 +2,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ShowSettlePanelEvent : EventBase
+public enum MessageId : uint
 {
-    public GameResultNtf ntf;
+    None = 0,
+
+    Ntf = 1,
+    GameResultNtf = Ntf + 1,
 }

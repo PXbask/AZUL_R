@@ -15,7 +15,7 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
     private void Start()
     {
         EventMgr.Instance.Subscribe<NgoLoadSceneCompleteEvent>(OnNgoLoadSceneComplete);
-        EventMgr.Instance.Subscribe<ShowSettlePanelEvent>(OnShowSettlePanelEvent);
+        EventMgr.Instance.Subscribe<ReceiveMessageEvent<GameResultNtf>>(OnGameResultNtf);
 
         NetworkManager.Singleton.OnClientStarted += OnClientStarted;
         NetworkManager.Singleton.OnClientStopped += OnClientStopped;
@@ -27,7 +27,7 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
         if (EventMgr.Instance)
         {
             EventMgr.Instance.Unsubscribe<NgoLoadSceneCompleteEvent>(OnNgoLoadSceneComplete);
-            EventMgr.Instance.Unsubscribe<ShowSettlePanelEvent>(OnShowSettlePanelEvent);
+            EventMgr.Instance.Unsubscribe<ReceiveMessageEvent<GameResultNtf>>(OnGameResultNtf);
         }
 
         if (NetworkManager.Singleton)
@@ -90,9 +90,9 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
         }
     }
 
-    private void OnShowSettlePanelEvent(ShowSettlePanelEvent e)
+    private void OnGameResultNtf(ReceiveMessageEvent<GameResultNtf> e)
     {
-        UIMgr.Instance.ShowPanel(UIStatic.SettlePanelName, e);
+        UIMgr.Instance.ShowPanel(UIStatic.SettlePanelName, e.Message);
     }
 
     /// <summary>

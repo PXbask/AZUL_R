@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+enum NetPlayerType {
+    None = 0;
+    HUMAN = 1;
+    AI = 2;
+}
+
+message NetBoardGamePlayerData{
+    int32 player_client_id = 1;
+    int32 player_seat_id = 2;
+    NetPlayerType player_type = 3;
+    string player_name = 4;
+    int32 player_score = 5;
+}
+
+message GameResultNtf{
+    repeated int32 winner_ids = 1; // List of winner player IDs
+    repeated NetBoardGamePlayerData player_datas = 2; // List of player data
+}

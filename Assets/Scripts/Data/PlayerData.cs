@@ -4,9 +4,9 @@ using UnityEngine;
 
 public enum PlayerType
 {
-    None,
-    Human,
-    AI,
+    None = 0,
+    Human = 1,
+    AI = 2,
 }
 
 public struct PlayerData : INetworkSerializable

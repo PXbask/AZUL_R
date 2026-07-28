@@ -36,17 +36,21 @@ public class SettlePanelFsmState : FsmState<BoardGameController>
         {
             m_Flag = true;
 
-            GameResultNtf ntf;
+            GameResultNtf ntf = new GameResultNtf();
             var winnerList = m_Owner.GetWinner();
             List<int> winnerSeatIds = new List<int>();
             foreach (var winner in winnerList)
             {
                 winnerSeatIds.Add(winner.SeatId);
             }
-            ntf.WinnerSeatIds = winnerSeatIds.ToArray();
-            ntf.PlayerDataList = m_Owner.GetAllPlayerData();
+            ntf.WinnerIds.AddRange(winnerSeatIds);
+            var lst = m_Owner.GetAllPlayerData();
+            foreach (var item in lst)
+            {
+                ntf.PlayerDatas.Add(NetworkUtility.MakeNetBoardGamePlayerData(item));
+            }
 
-            NgoMgr.Instance.ShowSettlePanelClientRpc(ntf);
+            NetworkMgr.Instance.SendMessageToAllClient(MessageId.GameResultNtf, ntf);
         }
     }
 

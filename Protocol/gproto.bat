@@ -3,7 +3,7 @@ chcp 65001 > nul
 
 set PROTOC=protoc.exe
 set PROTO_DIR=./proto
-set OUT_DIR=../Assets/Scripts/Protobuf
+set OUT_DIR=../Assets/Scripts/Network/Protobuf
 
 echo =========================
 echo Generate protobuf C# files

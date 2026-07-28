@@ -416,7 +416,14 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
 
     #region RPCs
 
-    
+    /// <summary>
+    /// Host → 广播所有 Client：发送自定义消息
+    /// </summary>
+    [ClientRpc]
+    public void SendMessageToAllClientRpc(uint id, byte[] data)
+    {
+        NetworkMgr.Instance?.OnReceiveMessage(id, data);
+    }
 
     /// <summary>
     /// Host → 广播所有 Client：强制返回 Menu
@@ -507,12 +514,6 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
     {
         Debug.Log($"Client received Action: Action: {data}");
         EventMgr.Instance.Trigger(new PlayerDoActionEvent { Data = data });
-    }
-
-    [ClientRpc]
-    public void ShowSettlePanelClientRpc(GameResultNtf ntf)
-    {
-        EventMgr.Instance.Trigger(new ShowSettlePanelEvent { ntf = ntf });
     }
 
     [ClientRpc]
