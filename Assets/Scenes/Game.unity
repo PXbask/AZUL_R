@@ -2732,6 +2732,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 327033977}
     m_Modifications:
+    - target: {fileID: 787393970834776049, guid: 730ab0b4efa315749921e83ba99fe7f6, type: 3}
+      propertyPath: m_RenderingLayerMask
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 1356063603919563565, guid: 730ab0b4efa315749921e83ba99fe7f6, type: 3}
       propertyPath: m_Name
       value: PieceBag
