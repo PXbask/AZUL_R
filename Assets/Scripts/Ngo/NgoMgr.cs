@@ -414,7 +414,9 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
         //UIMgr.Instance.HideAllPopups();
     }
 
-#region RPCs
+    #region RPCs
+
+    
 
     /// <summary>
     /// Host → 广播所有 Client：强制返回 Menu
@@ -439,10 +441,16 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
         });
     }
 
+    //[ClientRpc]
+    //public void FsmChangeStateClientRpc(FsmStateType stateType, INetworkSerializable data)
+    //{
+    //    EventMgr.Instance?.Trigger(new FsmChangeStateEvent { stateType = stateType, data = data });
+    //}
+
     [ClientRpc]
-    public void FsmChangeStateClientRpc(FsmStateType stateType, int data = 0)
+    public void FsmChangeStateClientRpc(FsmStateType stateType)
     {
-        EventMgr.Instance?.Trigger(new FsmChangeStateEvent { stateType = stateType, data = data });
+        EventMgr.Instance?.Trigger(new FsmChangeStateEvent { stateType = stateType, data = null });
     }
 
     [ServerRpc(RequireOwnership = false)]

@@ -4,11 +4,21 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
+public struct DealCardsFsmStateData : INetworkSerializable
+{
+    public bool FirstDealCard;
+    public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+    {
+        serializer.SerializeValue(ref FirstDealCard);
+    }
+}
+
 public class DealCardsFsmState : FsmState<BoardGameController>
 {
     private bool m_Flag;
 
     private bool m_FirstDealCard;
+    private DealCardsFsmStateData m_Data;
 
     public override void OnEnter(FsmMgr<BoardGameController> fsm, object data = null)
     {
@@ -17,11 +27,30 @@ public class DealCardsFsmState : FsmState<BoardGameController>
         EventMgr.Instance?.Subscribe<DealCardCompleteEvent>(OnDealCardComplete);
 
         m_Flag = false;
-        if(data != null)
-            m_FirstDealCard = (int)data != 0;
-        else
-            m_FirstDealCard = true;
+        AnalyzeData(data);
         Debug.Log($"进入了DealCardsFsmState状态--FirstDealCard={m_FirstDealCard}");
+    }
+
+    private void AnalyzeData(object data)
+    {
+        if(data != null)
+        {
+            if (data is DealCardsFsmStateData dealData)
+            {
+                m_Data = dealData;
+                m_FirstDealCard = dealData.FirstDealCard;
+            }
+            else
+            {
+                string typeName = data?.GetType().Name ?? "null";
+                Debug.LogError($"DealCardsFsmState OnEnter data is not of type DealCardsFsmStateData! Actual type: {typeName}");
+                m_FirstDealCard = false;
+            }
+        }
+        else
+        {
+            m_FirstDealCard = false;
+        }
     }
 
     public override void OnUpdate(FsmMgr<BoardGameController> fsm)

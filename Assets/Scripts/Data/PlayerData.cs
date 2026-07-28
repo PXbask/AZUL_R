@@ -54,6 +54,6 @@ public struct PlayerData : INetworkSerializable
 
     public override string ToString()
     {
-        return $"PlayerData {{ PlayerType = {PlayerType}, ClientId = {ClientId}, GameId = {GameId}, Name = {Name}, IsReady = {IsReady} }}";
+        return $"{{ PlayerType = {PlayerType}, ClientId = {ClientId}, GameId = {GameId}, Name = {Name}, AvatarId = {AvatarId}, IsReady = {IsReady} }}";
     }
 }

@@ -46,9 +46,30 @@ public class BoardGameController : MonoBehaviour
     private List<int> m_LostPieceIds = new List<int>();
     public List<int> LostPieceIDs => m_LostPieceIds;
 
+    /// <summary>
+    /// 本局游戏的唯一标识符
+    /// </summary>
+    public ObservableProperty<long> GameUID { get; private set; } = new ObservableProperty<long>(0);
+
+    /// <summary>
+    /// 本回合的首位玩家座位号
+    /// </summary>
     public int FirstPlayerSeatId { get; set; } = -1;
 
-    public int RoundNum { get; set; } = 0;
+    /// <summary>
+    /// 当前回合的步骤数, 后续考虑删除
+    /// </summary>
+    public int StepNumThisRound { get; set; } = 0;
+
+    /// <summary>
+    /// 当前回合数
+    /// </summary>
+    public ObservableProperty<int> RoundIndex { get; private set; } = new ObservableProperty<int>(0);
+    
+    /// <summary>
+    /// 当前步骤数
+    /// </summary>
+    public ObservableProperty<int> StepIndex { get; private set; } = new ObservableProperty<int>(0);
 
     public int CurrentPlayerSeatId { get; private set; }
 
@@ -123,10 +144,10 @@ public class BoardGameController : MonoBehaviour
     public void ResetRound()
     {
         FirstPlayerSeatId = -1;
-        RoundNum = 0;
+        StepNumThisRound = 0;
 
-        //m_RemainPieceIds.Clear();
-        //m_LostPieceIds.Clear();
+        RoundIndex.Value = 0;
+        StepIndex.Value = 0;
     }
 
     public void GameReset()
@@ -135,7 +156,7 @@ public class BoardGameController : MonoBehaviour
         ClearAllPieceTokens();
 
         ResetRound();
-        GameFsm.HostChangeState(FsmStateType.Idle);
+        ProcessEnterIdleFsm();
 
         if (NetworkManager.Singleton.IsHost)
         {
@@ -143,11 +164,18 @@ public class BoardGameController : MonoBehaviour
             NgoMgr.Instance.ShowPopupContentClientRpc("游戏马上开始");
             DOVirtual.DelayedCall(3f, () =>
             {
-                GameFsm.HostChangeState(FsmStateType.SelectFirstPlayer);
+                HostChangeState(FsmStateType.SelectFirstPlayer);
             });
         }
 
         ResetAllPlayerControllerTrans();
+    }
+
+    public void ProcessEnterIdleFsm()
+    {
+        //计算当前时间的时间戳
+        long timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        HostChangeState(FsmStateType.Idle, new IdleFsmStateData { Timestamp = timestamp });
     }
 
     /// <summary>
@@ -226,7 +254,7 @@ public class BoardGameController : MonoBehaviour
         }
     }
 
-    public void HostChangeState(FsmStateType stateType, int data = 0)
+    public void HostChangeState(FsmStateType stateType, INetworkSerializable data = null)
     {
         GameFsm.HostChangeState(stateType, data);
     }
@@ -447,8 +475,8 @@ public class BoardGameController : MonoBehaviour
         {
             DOVirtual.DelayedCall(GameStatic.TokenGoToAreaAnimInterval, () =>
             {
-                ++RoundNum;
-                int currentSeat = GetCurrentSeatIdByRoundNum(RoundNum);
+                ++StepNumThisRound;
+                int currentSeat = GetCurrentSeatIdByRoundNum(StepNumThisRound);
                 EventMgr.Instance.Trigger(new DealCardCompleteEvent { SeatId = currentSeat });
             });
         }
@@ -478,8 +506,8 @@ public class BoardGameController : MonoBehaviour
             return;
         }
 
-        ++RoundNum;
-        int currentSeat = GetCurrentSeatIdByRoundNum(RoundNum);
+        ++StepNumThisRound;
+        int currentSeat = GetCurrentSeatIdByRoundNum(StepNumThisRound);
         NgoMgr.Instance.SetCurrentPlayerTurnClientRpc(currentSeat);
     }
 
@@ -497,7 +525,7 @@ public class BoardGameController : MonoBehaviour
     {
         Debug.Log($"SetCurrentPlayerTurn: seatId={seatId}");
 
-        GameFsm.HostChangeState(FsmStateType.PlayerTurn, seatId);
+        GameFsm.HostChangeState(FsmStateType.PlayerTurn, new PlayerTurnFsmStateData { SeatId = seatId });
         CurrentPlayerSeatId = seatId;
     }
 

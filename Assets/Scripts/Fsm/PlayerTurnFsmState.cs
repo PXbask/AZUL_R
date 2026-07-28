@@ -5,13 +5,22 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
-using static Unity.VisualScripting.Member;
+
+public struct PlayerTurnFsmStateData : INetworkSerializable
+{
+    public int SeatId;
+    public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+    {
+        serializer.SerializeValue(ref SeatId);
+    }
+}
 
 public class PlayerTurnFsmState : FsmState<BoardGameController>
 {
     private int m_SeatId;
     private int m_MySeatId;
     private bool m_IsSendOperation;
+    private PlayerTurnFsmStateData m_Data;
 
     private NormalPieceToken m_SelectedPieceToken;
     private BoardGameController m_Owner;
@@ -21,20 +30,59 @@ public class PlayerTurnFsmState : FsmState<BoardGameController>
         base.OnEnter(fsm, data);
         m_Owner = fsm.Owner;
         m_IsSendOperation = false;
+        m_SelectedPieceToken = null;
 
         EventMgr.Instance.Subscribe<ReceiveAIServerMsgEvent>(OnReceiveAIServerMsgEvent);
         EventMgr.Instance.Subscribe<PlayerDoActionEvent>(OnPlayerDoAction);
         EventMgr.Instance.Subscribe<ReplaceHumanByAIPlayerCompleteEvent>(OnReplaceHumanByAIPlayerComplete);
 
-        if (data != null)
-            m_SeatId = (int)data;
-        else
-            Debug.LogError("PlayerTurnFsmState OnEnter data is null!");
+        AnalysisSeatIdFromData(data);
+        SetGameRoundStepIndex();
 
         m_MySeatId = PlayerMgr.Instance.GetSeatIdByClientId((int)NetworkManager.Singleton.LocalClientId);
-        m_SelectedPieceToken = null;
+        ShowStepTips();
 
-        if(m_MySeatId == m_SeatId)
+        if (NetworkManager.Singleton.IsHost)
+        {
+            if(PlayerMgr.Instance.GetPlayerDataBySeatId(m_SeatId).PlayerType == PlayerType.AI)
+            {
+                TrySendCurrentBoardInfoToAIServerOnce(m_SeatId);
+            }
+        }
+    }
+
+    private void AnalysisSeatIdFromData(object data)
+    {
+        if (data == null)
+        {
+            Debug.LogError("PlayerTurnFsmState OnEnter data is null!");
+            return;
+        }
+        if (data is PlayerTurnFsmStateData turnData)
+        {
+            m_Data = turnData;
+            m_SeatId = turnData.SeatId;
+        }
+        else
+        {
+            Debug.LogError($"PlayerTurnFsmState OnEnter data is not of type PlayerTurnFsmStateData! Actual type: {data.GetType()}");
+        }
+    }
+
+    private void SetGameRoundStepIndex()
+    {
+        ++(m_Owner.StepIndex.Value);
+
+        //如果是第一轮，确保回合数从1开始
+        if (m_Owner.RoundIndex.Value == 0)
+        {
+            m_Owner.RoundIndex.Value = 1;
+        }
+    }
+
+    private void ShowStepTips()
+    {
+        if (m_MySeatId == m_SeatId)
         {
             UIMgr.Instance.ShowDefaultPopup("现在是你的回合");
         }
@@ -42,14 +90,6 @@ public class PlayerTurnFsmState : FsmState<BoardGameController>
         {
             var player = m_Owner.GetBoardGamePlayerBySeatId(m_SeatId);
             UIMgr.Instance.ShowDefaultPopup($"现在是{player.PlayerName}的回合");
-        }
-
-        if(NetworkManager.Singleton.IsHost)
-        {
-            if(PlayerMgr.Instance.GetPlayerDataBySeatId(m_SeatId).PlayerType == PlayerType.AI)
-            {
-                TrySendCurrentBoardInfoToAIServerOnce(m_SeatId);
-            }
         }
     }
 

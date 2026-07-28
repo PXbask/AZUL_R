@@ -47,7 +47,7 @@ public class FsmMgr<TOwner>
     private struct StateRequest
     {
         public FsmStateType StateType;
-        public int Data;
+        public INetworkSerializable Data;
     }
 
     public FsmMgr(TOwner owner)
@@ -115,7 +115,7 @@ public class FsmMgr<TOwner>
     /// <summary>
     /// 切换到目标状态
     /// </summary>
-    public void ClientChangeState(FsmStateType stateType, object data = null)
+    public void ClientChangeState(FsmStateType stateType, INetworkSerializable data = null)
     {
         if (!_states.TryGetValue(stateType, out IFsmState<TOwner> nextState))
         {
@@ -130,7 +130,7 @@ public class FsmMgr<TOwner>
         NgoMgr.Instance.NotifyHostFsmSyncServerRpc(stateType);
     }
 
-    public void HostChangeState(FsmStateType stateType, int data = 0)
+    public void HostChangeState(FsmStateType stateType, INetworkSerializable data = null)
     {
         if (!NetworkManager.Singleton.IsHost) return;
 
@@ -172,7 +172,15 @@ public class FsmMgr<TOwner>
             m_FirstChange = false;
             m_SyncStateDoneCount = 0;
 
-            NgoMgr.Instance?.FsmChangeStateClientRpc(stateType, data);
+            //if (data is INetworkSerializable ndata)
+            //{
+            //    NgoMgr.Instance?.FsmChangeStateClientRpc(stateType, ndata);
+            //}
+            //else
+            //{
+                NgoMgr.Instance?.FsmChangeStateClientRpc(stateType);
+            //}
+            //}
         }
     }
 

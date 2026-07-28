@@ -22,6 +22,14 @@ public static class GameStatic
 
     public static readonly int NullPieceId = -1;
 
-    public static readonly string DefaultPlayerName = "Player";
+    public static string DefaultPlayerName
+    {
+        get
+        {
+            //获取当前时间戳精确到毫秒
+            long timestamp = System.DateTimeOffset.Now.ToUnixTimeMilliseconds();
+            return timestamp.ToString();
+        }
+    }
     public static readonly string DefaultAvatarId = "默认头像";
 }

@@ -113,6 +113,13 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
         }
 
         HostAddNewPlayer(clientId);
+
+        //说明所有人都已进入游戏场景并初始化完成
+        if (PlayerEnterSceneFlag.Count == GameMgr.Instance.LobbyConfig.TotalPlayerNum)
+        {
+            GameController.ProcessEnterIdleFsm();
+            NgoMgr.Instance.SpawnGameSectorsClientRpc();
+        }
     }
 
     public void HostAddNewPlayer(int clientId)
@@ -133,13 +140,6 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
         {
             Debug.LogError($"Player ClientId:{clientId} is already enter scene");
             return;
-        }
-
-        //说明所有人都已进入游戏场景并初始化完成
-        if(PlayerEnterSceneFlag.Count == GameMgr.Instance.LobbyConfig.TotalPlayerNum)
-        {
-            GameController.HostChangeState(FsmStateType.Idle);
-            NgoMgr.Instance.SpawnGameSectorsClientRpc();
         }
     }
 

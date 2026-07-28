@@ -25,8 +25,6 @@ public class GameStepSettleFsmState : FsmState<BoardGameController>
 
         m_Flag = false;
         m_Owner = fsm.Owner;
-
-        Debug.Log("进入了GameStepSettleFsmState");
     }
 
     public override void OnUpdate(FsmMgr<BoardGameController> fsm)
@@ -81,6 +79,13 @@ public class GameStepSettleFsmState : FsmState<BoardGameController>
         }
     }
 
+    public override void OnLeave(FsmMgr<BoardGameController> fsm)
+    {
+        base.OnLeave(fsm);
+
+        ++(m_Owner.RoundIndex.Value);
+    }
+
     private void HostDelayChangeState(FsmMgr<BoardGameController> fsm, float delay)
     {
         DOVirtual.DelayedCall(delay, () =>
@@ -123,7 +128,7 @@ public class GameStepSettleFsmState : FsmState<BoardGameController>
                     {
                         //谁拥有首位token，下一回合就是谁的先手
                         m_Owner.FirstPlayerSeatId = i;
-                        m_Owner.RoundNum = 0;
+                        m_Owner.StepNumThisRound = 0;
 
                         var midArea = BoardGameUtility.GetEmptyTokenAreaInMidArea();
                         if (midArea != null)
