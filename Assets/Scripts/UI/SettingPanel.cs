@@ -31,6 +31,18 @@ public class SettingPanel : UIPanel
     [SerializeField]
     private Button m_QuitBtn;
 
+    [SerializeField]
+    private Toggle m_EnableRuntimeLogToggle;
+
+    [SerializeField]
+    private TextMeshProUGUI m_CurRuntimeLogPath;
+
+    [SerializeField]
+    private TMP_InputField m_RuntimeLogPathField;
+
+    [SerializeField]
+    private Button m_ApplyRuntimeLogPathBtn;
+
     private List<string> m_AvatarIdList;
 
     protected override void OnInit()
@@ -44,8 +56,13 @@ public class SettingPanel : UIPanel
         m_AvatarDropdown.onValueChanged.AddListener(OnAvatarDropdownValueChanged);
         m_QuitBtn.onClick.AddListener(OnClickQuitBtn);
 
+        m_EnableRuntimeLogToggle.onValueChanged.AddListener(OnEnableRuntimeLogToggleClick);
+        m_ApplyRuntimeLogPathBtn.onClick.AddListener(OnApplyRuntimeLogPathBtnClick);
+
         DataMgr.Instance.LocalStorage.Name.OnValueChanged += OnPlayerNameChanged;
         DataMgr.Instance.LocalStorage.AvatarId.OnValueChanged += OnPlayerAvatarChanged;
+        DataMgr.Instance.LocalStorage.RuntimeLogPath.OnValueChanged += OnPlayerRuntimeLogPathChanged;
+        DataMgr.Instance.LocalStorage.EnableRuntimeLog.OnValueChanged += OnEnableRuntimeLogToggleClick;
     }
 
     protected override void OnShow(object data)
@@ -53,11 +70,45 @@ public class SettingPanel : UIPanel
         base.OnShow(data);
 
         m_CurrentNameText.text = DataMgr.Instance.LocalStorage.Name.Value;
+        m_EnableRuntimeLogToggle.SetIsOnWithoutNotify(DataMgr.Instance.LocalStorage.EnableRuntimeLog.Value);
+        m_CurRuntimeLogPath.text = DataMgr.Instance.LocalStorage.RuntimeLogPath.Value;
         m_NameInputField.text = string.Empty;
 
         m_CurrentAvatarImg.sprite = DataMgr.Instance.GetLocalAvatarSprite(DataMgr.Instance.LocalStorage.AvatarId.Value);
         m_AvatarDropdown.value = 0;
         m_AvatarPreviewImg.sprite = DataMgr.Instance.GetLocalAvatarSprite(m_AvatarIdList[m_AvatarDropdown.value]);
+    }
+
+    private void OnEnableRuntimeLogToggleClick(bool arg1, bool arg2)
+    {
+        m_EnableRuntimeLogToggle.SetIsOnWithoutNotify(arg2);
+    }
+
+    private void OnPlayerRuntimeLogPathChanged(string arg1, string arg2)
+    {
+        m_CurRuntimeLogPath.text = arg2;
+    }
+
+    private void OnApplyRuntimeLogPathBtnClick()
+    {
+        //检查路径是否为空
+        if (string.IsNullOrEmpty(m_RuntimeLogPathField.text))
+        {
+            UIMgr.Instance.ShowDefaultPopup("日志路径不能为空");
+            return;
+        }
+        //检查路径是否存在
+        if (!System.IO.Directory.Exists(m_RuntimeLogPathField.text))
+        {
+            UIMgr.Instance.ShowDefaultPopup("日志路径不存在");
+            return;
+        }
+        DataMgr.Instance.LocalStorage.RuntimeLogPath.Value = m_RuntimeLogPathField.text;
+    }
+
+    private void OnEnableRuntimeLogToggleClick(bool arg0)
+    {
+        DataMgr.Instance.LocalStorage.EnableRuntimeLog.Value = arg0;
     }
 
     private void OnPlayerAvatarChanged(string arg1, string arg2)
@@ -108,10 +159,15 @@ public class SettingPanel : UIPanel
         m_AvatarDropdown.onValueChanged.RemoveListener(OnAvatarDropdownValueChanged);
         m_QuitBtn.onClick.RemoveListener(OnClickQuitBtn);
 
-        if(DataMgr.Instance != null && DataMgr.Instance.LocalStorage != null)
+        m_EnableRuntimeLogToggle.onValueChanged.RemoveListener(OnEnableRuntimeLogToggleClick);
+        m_ApplyRuntimeLogPathBtn.onClick.RemoveListener(OnApplyRuntimeLogPathBtnClick);
+
+        if (DataMgr.Instance != null && DataMgr.Instance.LocalStorage != null)
         {
             DataMgr.Instance.LocalStorage.Name.OnValueChanged -= OnPlayerNameChanged;
             DataMgr.Instance.LocalStorage.AvatarId.OnValueChanged -= OnPlayerAvatarChanged;
+            DataMgr.Instance.LocalStorage.RuntimeLogPath.OnValueChanged -= OnPlayerRuntimeLogPathChanged;
+            DataMgr.Instance.LocalStorage.EnableRuntimeLog.OnValueChanged -= OnEnableRuntimeLogToggleClick;
         }
     }
 }

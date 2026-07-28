@@ -217,7 +217,7 @@ public class FsmMgr<TOwner>
             {
                 var ntf = new FsmChangeNtf();
                 ntf.NewState = NetworkUtility.MakeNetFsmStateType(stateType);
-                ntf.StateData = json;
+                ntf.StateData = json ?? string.Empty;
                 NetworkMgr.Instance?.SendMessageToAllClients(MessageId.FsmChangeStateNtf, ntf);
             }
         }

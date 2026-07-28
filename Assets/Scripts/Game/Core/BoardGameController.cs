@@ -49,7 +49,7 @@ public class BoardGameController : MonoBehaviour
     /// <summary>
     /// 本局游戏的唯一标识符
     /// </summary>
-    public ObservableProperty<long> GameUID { get; private set; } = new ObservableProperty<long>(0);
+    public ObservableProperty<string> GameUID { get; private set; } = new ObservableProperty<string>(string.Empty);
 
     /// <summary>
     /// 本回合的首位玩家座位号
@@ -175,7 +175,7 @@ public class BoardGameController : MonoBehaviour
     {
         //计算当前时间的时间戳
         long timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        var stateData = new IdleFsmState.StateData { Timestamp = timestamp };
+        var stateData = new IdleFsmState.StateData { Timestamp = timestamp.ToString() };
         string json = LitJson.JsonMapper.ToJson(stateData);
         HostChangeState(FsmStateType.Idle, json);
     }

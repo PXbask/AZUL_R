@@ -3,6 +3,7 @@ using DG.Tweening;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -341,6 +342,9 @@ public class PlayerTurnFsmState : FsmState<BoardGameController>
 
     public void ExecuteAIAction(PlayerActionData action)
     {
+        //写入操作日志
+        WriteToOpertaionLog(action);
+
         PieceColorType colorType = action.ColorType;
         var allSameColorTokens = new List<NormalPieceToken>();
 
@@ -413,6 +417,53 @@ public class PlayerTurnFsmState : FsmState<BoardGameController>
             });
         }
         ClearSelectedPieceToken();
+    }
+
+    /// <summary>
+    /// 写入操作日志
+    /// </summary>
+    private void WriteToOpertaionLog(PlayerActionData action)
+    {
+        if (!NetworkManager.Singleton.IsHost) return;
+        if (!DataMgr.Instance.LocalStorage.EnableRuntimeLog.Value) return;
+        string path = DataMgr.Instance.LocalStorage.RuntimeLogPath.Value;
+        if (string.IsNullOrEmpty(path))
+        {
+            Debug.LogError("Invalid runtime log path.");
+            return;
+        }
+
+        string localName = DataMgr.Instance.LocalStorage.Name.Value;
+        string gameId = m_Owner.GameUID.Value;
+        string writePath = DataMgr.Instance.LocalStorage.RuntimeLogPath.Value + $"/{localName}/{gameId}.log";
+        //获取writePath的目录
+        string directory = System.IO.Path.GetDirectoryName(writePath);
+        //如果目录不存在就创建目录
+        if (!Directory.Exists(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+        //如果文件不存在就创建文件
+        if (!System.IO.File.Exists(writePath))
+        {
+            System.IO.File.Create(writePath).Dispose();
+        }
+
+        RuntimeLogData logData = new RuntimeLogData
+        {
+            gameId = gameId,
+            stepIndex = m_Owner.StepIndex.Value,
+            roundIndex = m_Owner.RoundIndex.Value,
+            clientId = action.ClientId,
+            seatId = action.SeatId,
+            request = BoardGameMgr.Instance.GameController.GetTableData(action.SeatId),
+            response = action,
+            error = ""
+        };
+        //将logData序列化为json字符串
+        string jsonData = JsonUtility.ToJson(logData, true);
+        //将json字符串写入文件, 开头换行
+        System.IO.File.AppendAllText(writePath, jsonData + "\n");
     }
 
     /// <summary>

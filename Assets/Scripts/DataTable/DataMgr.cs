@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 
 public class DataMgr : MonoSingleton<DataMgr>
@@ -87,10 +88,16 @@ public class DataMgr : MonoSingleton<DataMgr>
     {
         public const string KEY_NAME = "name";
         public const string KEY_AVATAR_ID = "avatar_id";
+        public const string KEY_ENABLE_RUNTIME_LOG = "enable_runtime_log";
+        public const string KEY_RUNTIME_LOG_PATH = "runtime_log_path";
 
         public ObservableProperty<string> Name { get;  private set; }
 
         public ObservableProperty<string> AvatarId { get; private set; }
+
+        public ObservableProperty<bool> EnableRuntimeLog { get; private set; }
+
+        public ObservableProperty<string> RuntimeLogPath { get; private set; }
 
         public LocalStorageData()
         {
@@ -100,8 +107,27 @@ public class DataMgr : MonoSingleton<DataMgr>
             var avatarId = PlayerPrefs.GetString(KEY_AVATAR_ID, GameStatic.DefaultAvatarId);
             AvatarId = new ObservableProperty<string>(avatarId);
 
+            var enableRuntimeLog = PlayerPrefs.GetInt(KEY_ENABLE_RUNTIME_LOG,
+                GameStatic.DefaultEnableRuntimeLog ? 1 : 0);
+            EnableRuntimeLog = new ObservableProperty<bool>(enableRuntimeLog != 0);
+
+            var runtimeLogPath = PlayerPrefs.GetString(KEY_RUNTIME_LOG_PATH, GameStatic.DefaultRuntimeLogPath);
+            RuntimeLogPath = new ObservableProperty<string>(runtimeLogPath);
+
             Name.OnValueChanged += OnPlayerNameChanged;
             AvatarId.OnValueChanged += OnPlayerAvatarIdChanged;
+            EnableRuntimeLog.OnValueChanged += OnEnableRuntimeLogChanged;
+            RuntimeLogPath.OnValueChanged += OnRuntimeLogPathChanged;
+        }
+
+        private void OnRuntimeLogPathChanged(string arg1, string arg2)
+        {
+            PlayerPrefs.SetString(KEY_RUNTIME_LOG_PATH, arg2);
+        }
+
+        private void OnEnableRuntimeLogChanged(bool arg1, bool arg2)
+        {
+            PlayerPrefs.SetInt(KEY_ENABLE_RUNTIME_LOG, arg2 ? 1 : 0);
         }
 
         private void OnPlayerNameChanged(string oldValue, string newValue)
@@ -132,6 +158,8 @@ public class DataMgr : MonoSingleton<DataMgr>
         {
             Name.OnValueChanged -= OnPlayerNameChanged;
             AvatarId.OnValueChanged -= OnPlayerAvatarIdChanged;
+            EnableRuntimeLog.OnValueChanged -= OnEnableRuntimeLogChanged;
+            RuntimeLogPath.OnValueChanged -= OnRuntimeLogPathChanged;
 
             EventMgr.Instance?.Unsubscribe<LocalClientConnectedEvent>(OnPlayerConnected);
         }

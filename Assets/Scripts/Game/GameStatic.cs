@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 
 public static class GameStatic
@@ -32,4 +33,11 @@ public static class GameStatic
         }
     }
     public static readonly string DefaultAvatarId = "默认头像";
+    public static readonly bool DefaultEnableRuntimeLog = false;
+
+#if UNITY_EDITOR
+    public static readonly string DefaultRuntimeLogPath = Application.dataPath + "/../Bin/logs";
+#else
+    public static readonly string DefaultRuntimeLogPath = Path.GetDirectoryName(Application.dataPath);
+#endif
 }

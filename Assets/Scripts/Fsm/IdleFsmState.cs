@@ -11,7 +11,7 @@ public class IdleFsmState : FsmState<BoardGameController>
 {
     public class StateData
     {
-        public long Timestamp;
+        public string Timestamp;
     }
 
     private StateData m_Data;
