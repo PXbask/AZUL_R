@@ -27,13 +27,22 @@ public static partial class GameReflection {
           "IwoLcGxheWVyX3R5cGUYAyABKA4yDi5OZXRQbGF5ZXJUeXBlEhMKC3BsYXll",
           "cl9uYW1lGAQgASgJEhQKDHBsYXllcl9zY29yZRgFIAEoBSJSCg1HYW1lUmVz",
           "dWx0TnRmEhIKCndpbm5lcl9pZHMYASADKAUSLQoMcGxheWVyX2RhdGFzGAIg",
-          "AygLMhcuTmV0Qm9hcmRHYW1lUGxheWVyRGF0YSosCg1OZXRQbGF5ZXJUeXBl",
-          "EggKBE5vbmUQABIJCgVIVU1BThABEgYKAkFJEAJiBnByb3RvMw=="));
+          "AygLMhcuTmV0Qm9hcmRHYW1lUGxheWVyRGF0YSJHCgxGc21DaGFuZ2VOdGYS",
+          "IwoJbmV3X3N0YXRlGAEgASgOMhAuTmV0RnNtU3RhdGVUeXBlEhIKCnN0YXRl",
+          "X2RhdGEYAiABKAkqUAoNTmV0UGxheWVyVHlwZRIUChBQTEFZRVJfVFlQRV9O",
+          "T05FEAASFQoRUExBWUVSX1RZUEVfSFVNQU4QARISCg5QTEFZRVJfVFlQRV9B",
+          "SRACKukBCg9OZXRGc21TdGF0ZVR5cGUSEgoORlNNX1NUQVRFX05PTkUQABIS",
+          "Cg5GU01fU1RBVEVfSURMRRABEiEKHUZTTV9TVEFURV9TRUxFQ1RfRklSU1Rf",
+          "UExBWUVSEAISGAoURlNNX1NUQVRFX0RFQUxfQ0FSRFMQAxIZChVGU01fU1RB",
+          "VEVfUExBWUVSX1RVUk4QBBIeChpGU01fU1RBVEVfR0FNRV9TVEVQX1NFVFRM",
+          "RRAFEhoKFkZTTV9TVEFURV9GSU5BTF9TRVRUTEUQBhIaChZGU01fU1RBVEVf",
+          "U0VUVExFX1BBTkVMEAdiBnByb3RvMw=="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { },
-        new pbr::GeneratedClrTypeInfo(new[] {typeof(global::NetPlayerType), }, null, new pbr::GeneratedClrTypeInfo[] {
+        new pbr::GeneratedClrTypeInfo(new[] {typeof(global::NetPlayerType), typeof(global::NetFsmStateType), }, null, new pbr::GeneratedClrTypeInfo[] {
           new pbr::GeneratedClrTypeInfo(typeof(global::NetBoardGamePlayerData), global::NetBoardGamePlayerData.Parser, new[]{ "PlayerClientId", "PlayerSeatId", "PlayerType", "PlayerName", "PlayerScore" }, null, null, null, null),
-          new pbr::GeneratedClrTypeInfo(typeof(global::GameResultNtf), global::GameResultNtf.Parser, new[]{ "WinnerIds", "PlayerDatas" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::GameResultNtf), global::GameResultNtf.Parser, new[]{ "WinnerIds", "PlayerDatas" }, null, null, null, null),
+          new pbr::GeneratedClrTypeInfo(typeof(global::FsmChangeNtf), global::FsmChangeNtf.Parser, new[]{ "NewState", "StateData" }, null, null, null, null)
         }));
   }
   #endregion
@@ -41,9 +50,20 @@ public static partial class GameReflection {
 }
 #region Enums
 public enum NetPlayerType {
-  [pbr::OriginalName("None")] None = 0,
-  [pbr::OriginalName("HUMAN")] Human = 1,
-  [pbr::OriginalName("AI")] Ai = 2,
+  [pbr::OriginalName("PLAYER_TYPE_NONE")] PlayerTypeNone = 0,
+  [pbr::OriginalName("PLAYER_TYPE_HUMAN")] PlayerTypeHuman = 1,
+  [pbr::OriginalName("PLAYER_TYPE_AI")] PlayerTypeAi = 2,
+}
+
+public enum NetFsmStateType {
+  [pbr::OriginalName("FSM_STATE_NONE")] FsmStateNone = 0,
+  [pbr::OriginalName("FSM_STATE_IDLE")] FsmStateIdle = 1,
+  [pbr::OriginalName("FSM_STATE_SELECT_FIRST_PLAYER")] FsmStateSelectFirstPlayer = 2,
+  [pbr::OriginalName("FSM_STATE_DEAL_CARDS")] FsmStateDealCards = 3,
+  [pbr::OriginalName("FSM_STATE_PLAYER_TURN")] FsmStatePlayerTurn = 4,
+  [pbr::OriginalName("FSM_STATE_GAME_STEP_SETTLE")] FsmStateGameStepSettle = 5,
+  [pbr::OriginalName("FSM_STATE_FINAL_SETTLE")] FsmStateFinalSettle = 6,
+  [pbr::OriginalName("FSM_STATE_SETTLE_PANEL")] FsmStateSettlePanel = 7,
 }
 
 #endregion
@@ -124,7 +144,7 @@ public sealed partial class NetBoardGamePlayerData : pb::IMessage<NetBoardGamePl
 
   /// <summary>Field number for the "player_type" field.</summary>
   public const int PlayerTypeFieldNumber = 3;
-  private global::NetPlayerType playerType_ = global::NetPlayerType.None;
+  private global::NetPlayerType playerType_ = global::NetPlayerType.PlayerTypeNone;
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public global::NetPlayerType PlayerType {
@@ -187,7 +207,7 @@ public sealed partial class NetBoardGamePlayerData : pb::IMessage<NetBoardGamePl
     int hash = 1;
     if (PlayerClientId != 0) hash ^= PlayerClientId.GetHashCode();
     if (PlayerSeatId != 0) hash ^= PlayerSeatId.GetHashCode();
-    if (PlayerType != global::NetPlayerType.None) hash ^= PlayerType.GetHashCode();
+    if (PlayerType != global::NetPlayerType.PlayerTypeNone) hash ^= PlayerType.GetHashCode();
     if (PlayerName.Length != 0) hash ^= PlayerName.GetHashCode();
     if (PlayerScore != 0) hash ^= PlayerScore.GetHashCode();
     if (_unknownFields != null) {
@@ -216,7 +236,7 @@ public sealed partial class NetBoardGamePlayerData : pb::IMessage<NetBoardGamePl
       output.WriteRawTag(16);
       output.WriteInt32(PlayerSeatId);
     }
-    if (PlayerType != global::NetPlayerType.None) {
+    if (PlayerType != global::NetPlayerType.PlayerTypeNone) {
       output.WriteRawTag(24);
       output.WriteEnum((int) PlayerType);
     }
@@ -246,7 +266,7 @@ public sealed partial class NetBoardGamePlayerData : pb::IMessage<NetBoardGamePl
       output.WriteRawTag(16);
       output.WriteInt32(PlayerSeatId);
     }
-    if (PlayerType != global::NetPlayerType.None) {
+    if (PlayerType != global::NetPlayerType.PlayerTypeNone) {
       output.WriteRawTag(24);
       output.WriteEnum((int) PlayerType);
     }
@@ -274,7 +294,7 @@ public sealed partial class NetBoardGamePlayerData : pb::IMessage<NetBoardGamePl
     if (PlayerSeatId != 0) {
       size += 1 + pb::CodedOutputStream.ComputeInt32Size(PlayerSeatId);
     }
-    if (PlayerType != global::NetPlayerType.None) {
+    if (PlayerType != global::NetPlayerType.PlayerTypeNone) {
       size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) PlayerType);
     }
     if (PlayerName.Length != 0) {
@@ -301,7 +321,7 @@ public sealed partial class NetBoardGamePlayerData : pb::IMessage<NetBoardGamePl
     if (other.PlayerSeatId != 0) {
       PlayerSeatId = other.PlayerSeatId;
     }
-    if (other.PlayerType != global::NetPlayerType.None) {
+    if (other.PlayerType != global::NetPlayerType.PlayerTypeNone) {
       PlayerType = other.PlayerType;
     }
     if (other.PlayerName.Length != 0) {
@@ -607,6 +627,247 @@ public sealed partial class GameResultNtf : pb::IMessage<GameResultNtf>
         }
         case 18: {
           playerDatas_.AddEntriesFrom(ref input, _repeated_playerDatas_codec);
+          break;
+        }
+      }
+    }
+  }
+  #endif
+
+}
+
+[global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+public sealed partial class FsmChangeNtf : pb::IMessage<FsmChangeNtf>
+#if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    , pb::IBufferMessage
+#endif
+{
+  private static readonly pb::MessageParser<FsmChangeNtf> _parser = new pb::MessageParser<FsmChangeNtf>(() => new FsmChangeNtf());
+  private pb::UnknownFieldSet _unknownFields;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public static pb::MessageParser<FsmChangeNtf> Parser { get { return _parser; } }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public static pbr::MessageDescriptor Descriptor {
+    get { return global::GameReflection.Descriptor.MessageTypes[2]; }
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  pbr::MessageDescriptor pb::IMessage.Descriptor {
+    get { return Descriptor; }
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public FsmChangeNtf() {
+    OnConstruction();
+  }
+
+  partial void OnConstruction();
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public FsmChangeNtf(FsmChangeNtf other) : this() {
+    newState_ = other.newState_;
+    stateData_ = other.stateData_;
+    _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public FsmChangeNtf Clone() {
+    return new FsmChangeNtf(this);
+  }
+
+  /// <summary>Field number for the "new_state" field.</summary>
+  public const int NewStateFieldNumber = 1;
+  private global::NetFsmStateType newState_ = global::NetFsmStateType.FsmStateNone;
+  /// <summary>
+  /// The new state of the FSM
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public global::NetFsmStateType NewState {
+    get { return newState_; }
+    set {
+      newState_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "state_data" field.</summary>
+  public const int StateDataFieldNumber = 2;
+  private string stateData_ = "";
+  /// <summary>
+  /// Additional data related to the state change
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public string StateData {
+    get { return stateData_; }
+    set {
+      stateData_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+    }
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public override bool Equals(object other) {
+    return Equals(other as FsmChangeNtf);
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public bool Equals(FsmChangeNtf other) {
+    if (ReferenceEquals(other, null)) {
+      return false;
+    }
+    if (ReferenceEquals(other, this)) {
+      return true;
+    }
+    if (NewState != other.NewState) return false;
+    if (StateData != other.StateData) return false;
+    return Equals(_unknownFields, other._unknownFields);
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public override int GetHashCode() {
+    int hash = 1;
+    if (NewState != global::NetFsmStateType.FsmStateNone) hash ^= NewState.GetHashCode();
+    if (StateData.Length != 0) hash ^= StateData.GetHashCode();
+    if (_unknownFields != null) {
+      hash ^= _unknownFields.GetHashCode();
+    }
+    return hash;
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public override string ToString() {
+    return pb::JsonFormatter.ToDiagnosticString(this);
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public void WriteTo(pb::CodedOutputStream output) {
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    output.WriteRawMessage(this);
+  #else
+    if (NewState != global::NetFsmStateType.FsmStateNone) {
+      output.WriteRawTag(8);
+      output.WriteEnum((int) NewState);
+    }
+    if (StateData.Length != 0) {
+      output.WriteRawTag(18);
+      output.WriteString(StateData);
+    }
+    if (_unknownFields != null) {
+      _unknownFields.WriteTo(output);
+    }
+  #endif
+  }
+
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+    if (NewState != global::NetFsmStateType.FsmStateNone) {
+      output.WriteRawTag(8);
+      output.WriteEnum((int) NewState);
+    }
+    if (StateData.Length != 0) {
+      output.WriteRawTag(18);
+      output.WriteString(StateData);
+    }
+    if (_unknownFields != null) {
+      _unknownFields.WriteTo(ref output);
+    }
+  }
+  #endif
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int CalculateSize() {
+    int size = 0;
+    if (NewState != global::NetFsmStateType.FsmStateNone) {
+      size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) NewState);
+    }
+    if (StateData.Length != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeStringSize(StateData);
+    }
+    if (_unknownFields != null) {
+      size += _unknownFields.CalculateSize();
+    }
+    return size;
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public void MergeFrom(FsmChangeNtf other) {
+    if (other == null) {
+      return;
+    }
+    if (other.NewState != global::NetFsmStateType.FsmStateNone) {
+      NewState = other.NewState;
+    }
+    if (other.StateData.Length != 0) {
+      StateData = other.StateData;
+    }
+    _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public void MergeFrom(pb::CodedInputStream input) {
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    input.ReadRawMessage(this);
+  #else
+    uint tag;
+    while ((tag = input.ReadTag()) != 0) {
+    if ((tag & 7) == 4) {
+      // Abort on any end group tag.
+      return;
+    }
+    switch(tag) {
+        default:
+          _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+          break;
+        case 8: {
+          NewState = (global::NetFsmStateType) input.ReadEnum();
+          break;
+        }
+        case 18: {
+          StateData = input.ReadString();
+          break;
+        }
+      }
+    }
+  #endif
+  }
+
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+    uint tag;
+    while ((tag = input.ReadTag()) != 0) {
+    if ((tag & 7) == 4) {
+      // Abort on any end group tag.
+      return;
+    }
+    switch(tag) {
+        default:
+          _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+          break;
+        case 8: {
+          NewState = (global::NetFsmStateType) input.ReadEnum();
+          break;
+        }
+        case 18: {
+          StateData = input.ReadString();
           break;
         }
       }

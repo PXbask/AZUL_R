@@ -175,7 +175,9 @@ public class BoardGameController : MonoBehaviour
     {
         //计算当前时间的时间戳
         long timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        HostChangeState(FsmStateType.Idle, new IdleFsmStateData { Timestamp = timestamp });
+        var stateData = new IdleFsmState.StateData { Timestamp = timestamp };
+        string json = LitJson.JsonMapper.ToJson(stateData);
+        HostChangeState(FsmStateType.Idle, json);
     }
 
     /// <summary>
@@ -254,7 +256,7 @@ public class BoardGameController : MonoBehaviour
         }
     }
 
-    public void HostChangeState(FsmStateType stateType, INetworkSerializable data = null)
+    public void HostChangeState(FsmStateType stateType, object data = null)
     {
         GameFsm.HostChangeState(stateType, data);
     }
@@ -525,7 +527,10 @@ public class BoardGameController : MonoBehaviour
     {
         Debug.Log($"SetCurrentPlayerTurn: seatId={seatId}");
 
-        GameFsm.HostChangeState(FsmStateType.PlayerTurn, new PlayerTurnFsmStateData { SeatId = seatId });
+        var stateData = new PlayerTurnFsmState.StateData { SeatId = seatId };
+        string json = LitJson.JsonMapper.ToJson(stateData);
+        GameFsm.HostChangeState(FsmStateType.PlayerTurn, json);
+
         CurrentPlayerSeatId = seatId;
     }
 

@@ -4,21 +4,17 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
-public struct DealCardsFsmStateData : INetworkSerializable
-{
-    public bool FirstDealCard;
-    public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
-    {
-        serializer.SerializeValue(ref FirstDealCard);
-    }
-}
-
 public class DealCardsFsmState : FsmState<BoardGameController>
 {
+    public class StateData
+    {
+        public bool FirstDealCard;
+    }
+
     private bool m_Flag;
 
     private bool m_FirstDealCard;
-    private DealCardsFsmStateData m_Data;
+    private StateData m_Data;
 
     public override void OnEnter(FsmMgr<BoardGameController> fsm, object data = null)
     {
@@ -35,7 +31,7 @@ public class DealCardsFsmState : FsmState<BoardGameController>
     {
         if(data != null)
         {
-            if (data is DealCardsFsmStateData dealData)
+            if (data is StateData dealData)
             {
                 m_Data = dealData;
                 m_FirstDealCard = dealData.FirstDealCard;
@@ -43,7 +39,7 @@ public class DealCardsFsmState : FsmState<BoardGameController>
             else
             {
                 string typeName = data?.GetType().Name ?? "null";
-                Debug.LogError($"DealCardsFsmState OnEnter data is not of type DealCardsFsmStateData! Actual type: {typeName}");
+                Debug.LogError($"DealCardsFsmState OnEnter data is not of type StateData! Actual type: {typeName}");
                 m_FirstDealCard = false;
             }
         }

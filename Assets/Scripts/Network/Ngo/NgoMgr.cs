@@ -448,18 +448,6 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
         });
     }
 
-    //[ClientRpc]
-    //public void FsmChangeStateClientRpc(FsmStateType stateType, INetworkSerializable data)
-    //{
-    //    EventMgr.Instance?.Trigger(new FsmChangeStateEvent { stateType = stateType, data = data });
-    //}
-
-    [ClientRpc]
-    public void FsmChangeStateClientRpc(FsmStateType stateType)
-    {
-        EventMgr.Instance?.Trigger(new FsmChangeStateEvent { stateType = stateType, data = null });
-    }
-
     [ServerRpc(RequireOwnership = false)]
     public void NotifyHostFsmSyncServerRpc(FsmStateType stateType)
     {

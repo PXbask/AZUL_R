@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
+using UnityEditor.VersionControl;
 using UnityEngine;
 
 /// <summary>
@@ -28,7 +29,7 @@ public class NetworkMgr : MonoSingleton<NetworkMgr>
     /// <summary>
     /// 发送消息给所有客户端
     /// </summary>
-    public void SendMessageToAllClient(MessageId id, IMessage message)
+    public void SendMessageToAllClients(MessageId id, IMessage message)
     {
         SendMessageToAllClient((uint)id, message);
     }
@@ -39,11 +40,16 @@ public class NetworkMgr : MonoSingleton<NetworkMgr>
     public void OnReceiveMessage(uint id, byte[] data)
     {
         MessageId messageId = (MessageId)id;
+        IMessage message = null;
         switch (messageId)
         {
             case MessageId.GameResultNtf:
-                var message = GameResultNtf.Parser.ParseFrom(data);
-                EventMgr.Instance.Trigger(new ReceiveMessageEvent<GameResultNtf>(message));
+                message = GameResultNtf.Parser.ParseFrom(data);
+                EventMgr.Instance?.Trigger(new ReceiveMessageEvent<GameResultNtf>(message as GameResultNtf));
+                break;
+            case MessageId.FsmChangeStateNtf:
+                message = FsmChangeNtf.Parser.ParseFrom(data);
+                EventMgr.Instance?.Trigger(new ReceiveMessageEvent<FsmChangeNtf>(message as FsmChangeNtf));
                 break;
             default:
                 break;

@@ -8,4 +8,5 @@ public enum MessageId : uint
 
     Ntf = 1,
     GameResultNtf = Ntf + 1,
+    FsmChangeStateNtf = Ntf + 2,
 }

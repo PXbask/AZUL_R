@@ -5,6 +5,10 @@ using UnityEngine;
 
 public class SettlePanelFsmState : FsmState<BoardGameController>
 {
+    public class StateData
+    {
+    }
+
     private bool m_Flag;
     private BoardGameController m_Owner;
 
@@ -50,7 +54,7 @@ public class SettlePanelFsmState : FsmState<BoardGameController>
                 ntf.PlayerDatas.Add(NetworkUtility.MakeNetBoardGamePlayerData(item));
             }
 
-            NetworkMgr.Instance.SendMessageToAllClient(MessageId.GameResultNtf, ntf);
+            NetworkMgr.Instance.SendMessageToAllClients(MessageId.GameResultNtf, ntf);
         }
     }
 

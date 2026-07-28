@@ -6,21 +6,17 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
-public struct PlayerTurnFsmStateData : INetworkSerializable
-{
-    public int SeatId;
-    public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
-    {
-        serializer.SerializeValue(ref SeatId);
-    }
-}
-
 public class PlayerTurnFsmState : FsmState<BoardGameController>
 {
+    public class StateData
+    {
+        public int SeatId;
+    }
+
     private int m_SeatId;
     private int m_MySeatId;
     private bool m_IsSendOperation;
-    private PlayerTurnFsmStateData m_Data;
+    private StateData m_Data;
 
     private NormalPieceToken m_SelectedPieceToken;
     private BoardGameController m_Owner;
@@ -58,14 +54,14 @@ public class PlayerTurnFsmState : FsmState<BoardGameController>
             Debug.LogError("PlayerTurnFsmState OnEnter data is null!");
             return;
         }
-        if (data is PlayerTurnFsmStateData turnData)
+        if (data is StateData turnData)
         {
             m_Data = turnData;
             m_SeatId = turnData.SeatId;
         }
         else
         {
-            Debug.LogError($"PlayerTurnFsmState OnEnter data is not of type PlayerTurnFsmStateData! Actual type: {data.GetType()}");
+            Debug.LogError($"PlayerTurnFsmState OnEnter data is not of type StateData! Actual type: {data.GetType()}");
         }
     }
 

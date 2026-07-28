@@ -8,6 +8,10 @@ using UnityEngine;
 
 public class GameStepSettleFsmState : FsmState<BoardGameController>
 {
+    public class StateData
+    {
+    }
+
     private bool m_Flag;
     private BoardGameController m_Owner;
 

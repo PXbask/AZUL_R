@@ -1,10 +1,15 @@
-﻿using System.Collections;
+﻿using Newtonsoft.Json;
+using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
 public class SelectFirstPlayerFsmState : FsmState<BoardGameController>
 {
+    public class StateData
+    {
+    }
+
     private bool m_Flag;
     public override void OnEnter(FsmMgr<BoardGameController> fsm, object data = null)
     {
@@ -38,7 +43,10 @@ public class SelectFirstPlayerFsmState : FsmState<BoardGameController>
             owner.StepNumThisRound = 0;
             NgoMgr.Instance.ShowPopupContentClientRpc($"选择的首位玩家:{player.PlayerName}");
         }
+
         //发牌
-        fsm.HostChangeState(FsmStateType.DealCards, new DealCardsFsmStateData { FirstDealCard = true });
+        var stateData = new DealCardsFsmState.StateData { FirstDealCard = true };
+        var jsonData = LitJson.JsonMapper.ToJson(stateData);
+        fsm.HostChangeState(FsmStateType.DealCards, jsonData);
     }
 }

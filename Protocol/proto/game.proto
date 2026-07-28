@@ -1,9 +1,20 @@
 syntax = "proto3";
 
 enum NetPlayerType {
-    None = 0;
-    HUMAN = 1;
-    AI = 2;
+    PLAYER_TYPE_NONE = 0;
+    PLAYER_TYPE_HUMAN = 1;
+    PLAYER_TYPE_AI = 2;
+}
+
+enum NetFsmStateType{
+    FSM_STATE_NONE = 0;
+    FSM_STATE_IDLE = 1;
+    FSM_STATE_SELECT_FIRST_PLAYER = 2;
+    FSM_STATE_DEAL_CARDS = 3;
+    FSM_STATE_PLAYER_TURN = 4;
+    FSM_STATE_GAME_STEP_SETTLE = 5;
+    FSM_STATE_FINAL_SETTLE = 6;
+    FSM_STATE_SETTLE_PANEL = 7;
 }
 
 message NetBoardGamePlayerData{
@@ -17,4 +28,9 @@ message NetBoardGamePlayerData{
 message GameResultNtf{
     repeated int32 winner_ids = 1; // List of winner player IDs
     repeated NetBoardGamePlayerData player_datas = 2; // List of player data
+}
+
+message FsmChangeNtf{
+    NetFsmStateType new_state = 1; // The new state of the FSM
+    string state_data = 2; // Additional data related to the state change
 }

@@ -7,8 +7,9 @@ using Unity.Netcode;
 using UnityEditor;
 using UnityEngine;
 
-public enum FsmStateType
+public enum FsmStateType : int
 {
+    None = 0,
     Idle,
     SelectFirstPlayer,
     DealCards,
@@ -47,7 +48,7 @@ public class FsmMgr<TOwner>
     private struct StateRequest
     {
         public FsmStateType StateType;
-        public INetworkSerializable Data;
+        public object Data;
     }
 
     public FsmMgr(TOwner owner)
@@ -61,7 +62,7 @@ public class FsmMgr<TOwner>
         _stateRequestQueue = new Queue<StateRequest>();
         _cts = new CancellationTokenSource();
 
-        EventMgr.Instance?.Subscribe<FsmChangeStateEvent>(OnFsmChangeStateEvent);
+        EventMgr.Instance?.Subscribe<ReceiveMessageEvent<FsmChangeNtf>>(OnFsmChangeStateNtf);
         EventMgr.Instance?.Subscribe(NoneArgEventEnum.FsmSyncEvent, OnFsmSyncEvent);
 
         if (NetworkManager.Singleton && NetworkManager.Singleton.IsHost)
@@ -91,10 +92,44 @@ public class FsmMgr<TOwner>
         Debug.Log($"[FsmMgr] 当前状态:{_currentState?.GetType().Name} 同步状态: {m_SyncStateDoneCount}/{GameMgr.Instance.LobbyConfig.PlayerNum}");
     }
 
-    private void OnFsmChangeStateEvent(FsmChangeStateEvent e)
+    private void OnFsmChangeStateNtf(ReceiveMessageEvent<FsmChangeNtf> e)
     {
-        var stateType = e.stateType;
-        ClientChangeState(stateType, e.data);
+        if(e.Message != null)
+        {
+            var enu = NetworkUtility.MakeFsmStateType(e.Message.NewState);
+            object stateData = null;
+            switch (enu)
+            {
+                case FsmStateType.Idle:
+                    stateData = LitJson.JsonMapper.ToObject<IdleFsmState.StateData>(e.Message.StateData);
+                    break;
+                case FsmStateType.SelectFirstPlayer:
+                    stateData = LitJson.JsonMapper.ToObject<SelectFirstPlayerFsmState.StateData>(e.Message.StateData);
+                    break;
+                case FsmStateType.DealCards:
+                    stateData = LitJson.JsonMapper.ToObject<DealCardsFsmState.StateData>(e.Message.StateData);
+                    break;
+                case FsmStateType.PlayerTurn:
+                    stateData = LitJson.JsonMapper.ToObject<PlayerTurnFsmState.StateData>(e.Message.StateData);
+                    break;
+                case FsmStateType.GameStepSettle:
+                    stateData = LitJson.JsonMapper.ToObject<GameStepSettleFsmState.StateData>(e.Message.StateData);
+                    break;
+                case FsmStateType.FinalSettle:
+                    stateData = LitJson.JsonMapper.ToObject<FinalSettleFsmState.StateData>(e.Message.StateData);
+                    break;
+                case FsmStateType.SettlePanel:
+                    stateData = LitJson.JsonMapper.ToObject<SettlePanelFsmState.StateData>(e.Message.StateData);
+                    break;
+                default:
+                    break;
+            }
+            ClientChangeState(enu, stateData);
+        }
+        else
+        {
+            Debug.LogError("[FsmMgr] Received FsmChangeNtf message is null.");
+        }
     }
 
     /// <summary>
@@ -115,7 +150,7 @@ public class FsmMgr<TOwner>
     /// <summary>
     /// 切换到目标状态
     /// </summary>
-    public void ClientChangeState(FsmStateType stateType, INetworkSerializable data = null)
+    public void ClientChangeState(FsmStateType stateType, object data = null)
     {
         if (!_states.TryGetValue(stateType, out IFsmState<TOwner> nextState))
         {
@@ -130,7 +165,7 @@ public class FsmMgr<TOwner>
         NgoMgr.Instance.NotifyHostFsmSyncServerRpc(stateType);
     }
 
-    public void HostChangeState(FsmStateType stateType, INetworkSerializable data = null)
+    public void HostChangeState(FsmStateType stateType, object data = null)
     {
         if (!NetworkManager.Singleton.IsHost) return;
 
@@ -172,15 +207,19 @@ public class FsmMgr<TOwner>
             m_FirstChange = false;
             m_SyncStateDoneCount = 0;
 
-            //if (data is INetworkSerializable ndata)
-            //{
-            //    NgoMgr.Instance?.FsmChangeStateClientRpc(stateType, ndata);
-            //}
-            //else
-            //{
-                NgoMgr.Instance?.FsmChangeStateClientRpc(stateType);
-            //}
-            //}
+            string json = data as string;
+            if (data != null && json == null)
+            {
+                Debug.LogError($"[FsmMgr] State {stateType} data is not a string.");
+                return;
+            }
+            else
+            {
+                var ntf = new FsmChangeNtf();
+                ntf.NewState = NetworkUtility.MakeNetFsmStateType(stateType);
+                ntf.StateData = json;
+                NetworkMgr.Instance?.SendMessageToAllClients(MessageId.FsmChangeStateNtf, ntf);
+            }
         }
     }
 
@@ -191,7 +230,7 @@ public class FsmMgr<TOwner>
 
     public void OnDestroy()
     {
-        EventMgr.Instance?.Unsubscribe<FsmChangeStateEvent>(OnFsmChangeStateEvent);
+        EventMgr.Instance?.Unsubscribe<ReceiveMessageEvent<FsmChangeNtf>>(OnFsmChangeStateNtf);
         EventMgr.Instance?.Unsubscribe(NoneArgEventEnum.FsmSyncEvent, OnFsmSyncEvent);
 
         _cts?.Cancel();

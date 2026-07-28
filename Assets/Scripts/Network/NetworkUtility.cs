@@ -22,4 +22,16 @@ public static class NetworkUtility
             PlayerName = playerData.Name,
         };
     }
+
+    public static NetFsmStateType MakeNetFsmStateType(FsmStateType fsmStateType)
+    {
+        int num = (int)fsmStateType;
+        return (NetFsmStateType)num;
+    }
+
+    public static FsmStateType MakeFsmStateType(NetFsmStateType netFsmStateType)
+    {
+        int num = (int)netFsmStateType;
+        return (FsmStateType)num;
+    }
 }
