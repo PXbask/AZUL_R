@@ -16,13 +16,11 @@ public class IdleFsmState : FsmState<BoardGameController>
 
     private bool m_Flag;
     private StateData m_Data;
-    private BoardGameController m_Owner;
 
     public override void OnEnter(FsmMgr<BoardGameController> fsm, object data = null)
     {
         base.OnEnter(fsm, data);
         m_Flag = false;
-        m_Owner = fsm.Owner;
 
         if (data is StateData idleData)
         {
@@ -44,7 +42,8 @@ public class IdleFsmState : FsmState<BoardGameController>
 
             if(NetworkManager.Singleton.IsHost)
             {
-                m_Owner.StartSelectFirstPlayerAfterS(GameStatic.FsmIdleToSelectFirstInterval);
+                UIMgr.Instance.ShowDefaultPopup("游戏马上开始...");
+                m_Owner.HostEnterFsmStateAfter(FsmStateType.SelectFirstPlayer, null, GameStatic.FsmIdleToSelectFirstInterval);
             }
         }
     }

@@ -366,6 +366,14 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
     /// </summary>
     private void LoadMenuSceneLocal()
     {
+        if(SceneMgr.Instance == null)
+        {
+            Debug.LogError("[NgoMgr] SceneMgr.Instance 为 null，无法加载 Menu 场景");
+            return;
+        }
+
+        if (SceneMgr.Instance.GetActiveScene().name == SceneStatic.MenuSceneName) return;
+
         SceneMgr.Instance.LoadScene(SceneStatic.MenuSceneName);
     }
 

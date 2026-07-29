@@ -3,6 +3,7 @@ using Luban.SimpleJSON;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
@@ -226,39 +227,24 @@ public class AIMgr : MonoSingleton<AIMgr>
             {
                 while (!cancellationToken.IsCancellationRequested && stream.CanRead)
                 {
-                    // 读取消息长度（4字节）
                     byte[] lengthBytes = new byte[4];
                     int lengthBytesRead = await stream.ReadAsync(lengthBytes, 0, 4, cancellationToken);
 
-                    if (lengthBytesRead == 0)
-                    {
-                        // 连接已关闭
-                        break;
-                    }
+                    if (lengthBytesRead == 0) break;
 
                     int messageLength = BitConverter.ToInt32(lengthBytes, 0);
-
                     if (messageLength <= 0 || messageLength > BUFFER_SIZE)
                     {
                         Debug.LogWarning($"接收到无效的消息长度: {messageLength}");
                         continue;
                     }
 
-                    // 读取消息内容
                     int totalBytesRead = 0;
                     while (totalBytesRead < messageLength)
                     {
                         int bytesRead = await stream.ReadAsync(
-                            buffer,
-                            totalBytesRead,
-                            messageLength - totalBytesRead,
-                            cancellationToken);
-
-                        if (bytesRead == 0)
-                        {
-                            break;
-                        }
-
+                            buffer, totalBytesRead, messageLength - totalBytesRead, cancellationToken);
+                        if (bytesRead == 0) break;
                         totalBytesRead += bytesRead;
                     }
 
@@ -266,8 +252,6 @@ public class AIMgr : MonoSingleton<AIMgr>
                     {
                         string message = Encoding.UTF8.GetString(buffer, 0, messageLength);
                         Debug.Log($"收到AI服务器消息: {message}");
-
-                        // 触发消息接收事件（在主线程处理）
                         EventMgr.Instance.Trigger(new ReceiveAIServerMsgEvent
                         {
                             AIAction = JsonMapper.ToObject<PlayerActionData>(message)
@@ -277,10 +261,16 @@ public class AIMgr : MonoSingleton<AIMgr>
             }
             catch (OperationCanceledException)
             {
-                // 正常取消
+                // 正常取消，忽略
+            }
+            catch (IOException ex) when (cancellationToken.IsCancellationRequested)
+            {
+                // ✅ Stop() 主动取消导致的 IO 中断，属于正常流程，不报错
+                Debug.Log($"AI接收循环已因取消而停止: {ex.Message}");
             }
             catch (Exception ex)
             {
+                // 真正的意外错误才报
                 Debug.LogError($"接收消息错误: {ex.Message}");
             }
         }

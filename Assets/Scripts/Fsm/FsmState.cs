@@ -2,9 +2,14 @@
 
 public abstract class FsmState<T> : IFsmState<T>
 {
-    public virtual void OnInit(FsmMgr<T> fsm) { }
+    protected T m_Owner;
+    public virtual void OnInit(FsmMgr<T> fsm)
+    {
+        m_Owner = fsm.Owner;
+    }
     public virtual void OnEnter(FsmMgr<T> fsm, object data = null)
     {
+        m_Owner = fsm.Owner;
         Debug.Log($"进入状态: {this.GetType().Name}");
     }
     public virtual void OnUpdate(FsmMgr<T> fsm) { }

@@ -20,12 +20,10 @@ public class PlayerTurnFsmState : FsmState<BoardGameController>
     private StateData m_Data;
 
     private NormalPieceToken m_SelectedPieceToken;
-    private BoardGameController m_Owner;
 
     public override void OnEnter(FsmMgr<BoardGameController> fsm, object data)
     {
         base.OnEnter(fsm, data);
-        m_Owner = fsm.Owner;
         m_IsSendOperation = false;
         m_SelectedPieceToken = null;
 

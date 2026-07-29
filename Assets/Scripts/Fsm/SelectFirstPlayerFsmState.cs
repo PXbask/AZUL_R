@@ -47,6 +47,6 @@ public class SelectFirstPlayerFsmState : FsmState<BoardGameController>
         //发牌
         var stateData = new DealCardsFsmState.StateData { FirstDealCard = true };
         var jsonData = LitJson.JsonMapper.ToJson(stateData);
-        fsm.HostChangeState(FsmStateType.DealCards, jsonData);
+        m_Owner.HostEnterFsmStateAfter(FsmStateType.DealCards, jsonData, GameStatic.FsmSelectFirstToDealCardsInterval);
     }
 }

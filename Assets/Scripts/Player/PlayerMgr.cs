@@ -9,6 +9,13 @@ using UnityEngine;
 public class PlayerMgr : MonoSingleton<PlayerMgr>
 {
     private Dictionary<int, PlayerLobbyData> ConnectedPlayerData = new Dictionary<int, PlayerLobbyData>();
+    private List<string> m_AiNamePool = new()
+    {
+        "布鲁",
+        "瑞德",
+        "耶罗",
+        "冷酷的敌人",
+    };
 
     private void Start()
     {
@@ -50,7 +57,7 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
 
         if(ConnectedPlayerData.TryGetValue((int)e.Message.ClientId, out PlayerLobbyData playerData))
         {
-            UIMgr.Instance?.ShowDefaultPopup($"玩家 {e.Message.ClientId} 离开了游戏");
+            UIMgr.Instance?.ShowDefaultPopup($"玩家 {playerData.Name} 离开了游戏");
             RemovePlayer((int)e.Message.ClientId);
         }
         else
@@ -152,7 +159,7 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
                     PlayerType = PlayerType.AI,
                     ClientId = fakeClientId,
                     SeatId = ConnectedPlayerData.Count,
-                    Name = string.Format("Ai [{0}]", fakeClientId),
+                    Name = GetRandomAiName(fakeClientId),
                     AvatarId = GameStatic.DefaultAvatarId,
                     IsReady = true,
                 };
@@ -172,7 +179,7 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
         }
         if (!ConnectedPlayerData.TryGetValue(clientId, out PlayerLobbyData value))
         {
-            Debug.LogWarning($"PlayerDataDict does not contain clientId {clientId}");
+            Debug.Log($"PlayerDataDict does not contain clientId {clientId}, ignore...");
         }
         else
         {
@@ -327,5 +334,23 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
         }
         Debug.LogError($"GetPlayerDataByGameId error, gameId: {gameId}");
         return default;
+    }
+
+    private string GetRandomAiName(int fakeClientId)
+    {
+        List<string> lst = new List<string>(m_AiNamePool);
+        foreach (var item in ConnectedPlayerData)
+        {
+            lst.Remove(item.Value.Name.ToString());
+        }
+        
+        if (lst.Count > 0)
+        {
+            return lst.First();
+        }
+        else
+        {
+            return string.Format("Ai [{0}]", fakeClientId);
+        }
     }
 }

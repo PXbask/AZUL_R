@@ -9,14 +9,12 @@ public class FinalSettleFsmState : FsmState<BoardGameController>
     }
 
     private bool m_Flag;
-    private BoardGameController m_Owner;
 
     public override void OnInit(FsmMgr<BoardGameController> fsm)
     {
         base.OnInit(fsm);
 
         m_Flag = false;
-        m_Owner = fsm.Owner;
     }
 
     public override void OnEnter(FsmMgr<BoardGameController> fsm, object data = null)
@@ -24,7 +22,6 @@ public class FinalSettleFsmState : FsmState<BoardGameController>
         base.OnEnter(fsm, data);
 
         m_Flag = false;
-        m_Owner = fsm.Owner;
     }
 
     public override void OnUpdate(FsmMgr<BoardGameController> fsm)

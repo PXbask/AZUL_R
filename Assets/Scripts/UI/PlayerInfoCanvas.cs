@@ -34,6 +34,7 @@ public class PlayerInfoCanvas : MonoPoolObject
 
     private void OnPlayerDataChanged(PlayerLobbyData previousValue, PlayerLobbyData newValue)
     {
+        if (newValue == default) return;
         playerNameText.text = newValue.Name.ToString();
         playerAvatarImg.sprite = DataMgr.Instance.GetLocalAvatarSprite(newValue.AvatarId.ToString());
     }

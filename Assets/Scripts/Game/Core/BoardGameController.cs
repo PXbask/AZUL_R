@@ -1,6 +1,7 @@
 ﻿using AZUL;
 using cfg;
 using cfg.AZUL;
+using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using System;
 using System.Collections;
@@ -77,7 +78,6 @@ public class BoardGameController : MonoBehaviour
     private void Start()
     {
         EventMgr.Instance?.Subscribe(NoneArgEventEnum.ClearSceneObjectEvent, OnClearScene);
-        EventMgr.Instance?.Subscribe<ReceiveMessageEvent<ReplaceHumanByAIPlayerNtf>>(OnReplaceHumanByAIPlayer);
     }
 
     private void OnDestroy()
@@ -86,17 +86,16 @@ public class BoardGameController : MonoBehaviour
         GameFsm = null;
 
         EventMgr.Instance?.Unsubscribe(NoneArgEventEnum.ClearSceneObjectEvent, OnClearScene);
-        EventMgr.Instance?.Unsubscribe<ReceiveMessageEvent<ReplaceHumanByAIPlayerNtf>>(OnReplaceHumanByAIPlayer);
     }
 
-    private void OnReplaceHumanByAIPlayer(ReceiveMessageEvent<ReplaceHumanByAIPlayerNtf> e)
+    public void ReplaceHumanByAIPlayer(ReplaceHumanByAIPlayerNtf ntf)
     {
-        if(e.Message == null)
+        if(ntf == null)
         {
             Debug.LogError("OnReplaceHumanByAIPlayer: message is null");
             return;
         }
-        var seatId = e.Message.SeatId;
+        var seatId = ntf.SeatId;
         var humanPlayer = GetBoardGamePlayerBySeatId(seatId);
 
         //寻找旧的玩家物体和数据
@@ -105,19 +104,19 @@ public class BoardGameController : MonoBehaviour
             //移除原有玩家的游戏物体(已经因为断线自动Despawn了)
 
             //创建新的AI玩家物体, 只有host会执行
-            SpawnPlayerControllerObject(e.Message.AiClientId);
+            SpawnPlayerControllerObject(ntf.AiClientId);
 
             var playerBoard = humanPlayer.PlayerBoard;
             //移除原有玩家数据
             BoardGamePlayerDic.Remove(seatId);
             //创建AI玩家
-            MakeBoardGamePlayer(e.Message.AiClientId, seatId, playerBoard);
+            MakeBoardGamePlayer(ntf.AiClientId, seatId, playerBoard);
 
             //发送事件
             EventMgr.Instance.Trigger(new ReplaceHumanByAIPlayerCompleteEvent
             {
-                HumanClientId = e.Message.HumanClientId,
-                AIClientId = e.Message.AiClientId,
+                HumanClientId = ntf.HumanClientId,
+                AIClientId = ntf.AiClientId,
                 SeatId = seatId
             });
         }
@@ -168,20 +167,24 @@ public class BoardGameController : MonoBehaviour
         ResetAllPlayerControllerTrans();
     }
 
-    /// <summary>
-    /// 开始倒计时，延迟进入选择首位玩家状态
-    /// </summary>
-    public void StartSelectFirstPlayerAfterS(float seconds)
+#region Procedure
+
+    public void HostEnterFsmStateAfter(FsmStateType stateType, object data, float seconds)
     {
-        if (NetworkManager.Singleton.IsHost)
-        {
-            DOVirtual.DelayedCall(seconds, () =>
-            {
-                UIMgr.Instance.ShowBoardcastPopup("游戏马上开始");
-                HostChangeState(FsmStateType.SelectFirstPlayer);
-            });
-        }
+        if (!NetworkManager.Singleton.IsHost) return;
+
+        EnterFsmStateAsync(stateType, data, seconds).Forget();
     }
+
+    private async UniTaskVoid EnterFsmStateAsync(FsmStateType stateType, object data, float seconds)
+    {
+        await UniTask.Delay(System.TimeSpan.FromSeconds(seconds),
+            cancellationToken: this.GetCancellationTokenOnDestroy());
+
+        GameFsm.HostChangeState(stateType, data);
+    }
+
+    #endregion
 
     public void ProcessEnterIdleFsm()
     {
@@ -189,7 +192,7 @@ public class BoardGameController : MonoBehaviour
         long timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         var stateData = new IdleFsmState.StateData { Timestamp = timestamp.ToString() };
         string json = LitJson.JsonMapper.ToJson(stateData);
-        HostChangeState(FsmStateType.Idle, json);
+        GameFsm.HostChangeState(FsmStateType.Idle, json);
     }
 
     /// <summary>
@@ -230,12 +233,14 @@ public class BoardGameController : MonoBehaviour
             var player = BoardGamePlayerDic[i];
             player.PlayerBoard.Recycle();
         }
+        BoardGamePlayerDic.Clear();
 
         for (int i = 0; i < FactoryDiskDic.Count; i++)
         {
             var item = FactoryDiskDic[i];
             item.Recycle();
         }
+        FactoryDiskDic.Clear();
     }
 
     private void InitGameFsm()
@@ -266,11 +271,6 @@ public class BoardGameController : MonoBehaviour
             area.Init(0, i, PlaceTokenPositionGroup.MidTable, GameStatic.NonePlayerSeatId);
             MidTablePlaceAreas.Add(i, area);
         }
-    }
-
-    public void HostChangeState(FsmStateType stateType, object data = null)
-    {
-        GameFsm.HostChangeState(stateType, data);
     }
 
     private void Update()

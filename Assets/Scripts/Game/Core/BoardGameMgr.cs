@@ -22,6 +22,7 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
         EventMgr.Instance.Subscribe<ReceiveMessageEvent<ChangePlayerTurnNtf>>(OnChangePlayerTurnNtf);
         EventMgr.Instance.Subscribe<ReceiveMessageEvent<ClientEnterGameSceneNtf>>(OnClientEnterGameSceneNtf);
         EventMgr.Instance.Subscribe<ReceiveMessageEvent<GameResetNtf>>(OnGameResetNtf);
+        EventMgr.Instance.Subscribe<ReceiveMessageEvent<ReplaceHumanByAIPlayerNtf>>(OnReplaceHumanByAIPlayer);
 
         NetworkManager.Singleton.OnClientStarted += OnClientStarted;
         NetworkManager.Singleton.OnClientStopped += OnClientStopped;
@@ -39,6 +40,7 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
             EventMgr.Instance.Unsubscribe<ReceiveMessageEvent<ChangePlayerTurnNtf>>(OnChangePlayerTurnNtf);
             EventMgr.Instance.Unsubscribe<ReceiveMessageEvent<ClientEnterGameSceneNtf>>(OnClientEnterGameSceneNtf);
             EventMgr.Instance.Unsubscribe<ReceiveMessageEvent<GameResetNtf>>(OnGameResetNtf);
+            EventMgr.Instance.Unsubscribe<ReceiveMessageEvent<ReplaceHumanByAIPlayerNtf>>(OnReplaceHumanByAIPlayer);
         }
 
         if (NetworkManager.Singleton)
@@ -102,6 +104,23 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
                 }
             }
         }
+    }
+
+    public void OnReplaceHumanByAIPlayer(ReceiveMessageEvent<ReplaceHumanByAIPlayerNtf> e)
+    {
+        if (GameController == null)
+        {
+            Debug.LogError("GameController is null!");
+            return;
+        }
+
+        if (e.Message == null)
+        {
+            Debug.LogError("OnReplaceHumanByAIPlayer: message is null");
+            return;
+        }
+
+        GameController.ReplaceHumanByAIPlayer(e.Message);
     }
 
     private void OnGameResetNtf(ReceiveMessageEvent<GameResetNtf> e)

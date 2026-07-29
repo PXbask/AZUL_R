@@ -13,14 +13,12 @@ public class GameStepSettleFsmState : FsmState<BoardGameController>
     }
 
     private bool m_Flag;
-    private BoardGameController m_Owner;
 
     public override void OnInit(FsmMgr<BoardGameController> fsm)
     {
         base.OnInit(fsm);
 
         m_Flag = false;
-        m_Owner = fsm.Owner;
     }
 
     public override void OnEnter(FsmMgr<BoardGameController> fsm, object data = null)
@@ -28,7 +26,6 @@ public class GameStepSettleFsmState : FsmState<BoardGameController>
         base.OnEnter(fsm, data);
 
         m_Flag = false;
-        m_Owner = fsm.Owner;
     }
 
     public override void OnUpdate(FsmMgr<BoardGameController> fsm)
@@ -78,7 +75,7 @@ public class GameStepSettleFsmState : FsmState<BoardGameController>
 
             if (NetworkManager.Singleton.IsHost)
             {
-                HostDelayChangeState(fsm, 2f);
+                HostDelayChangeState();
             }
         }
     }
@@ -90,21 +87,17 @@ public class GameStepSettleFsmState : FsmState<BoardGameController>
         ++(m_Owner.RoundIndex.Value);
     }
 
-    private void HostDelayChangeState(FsmMgr<BoardGameController> fsm, float delay)
+    private void HostDelayChangeState()
     {
-        DOVirtual.DelayedCall(delay, () =>
+        bool matchGameOverCondition = BoardGameUtility.ExistColoredAreaRowFullFilled();
+        if (matchGameOverCondition)
         {
-            bool matchGameOverCondition = BoardGameUtility.ExistColoredAreaRowFullFilled();
-            if (matchGameOverCondition)
-            {
-                fsm.HostChangeState(FsmStateType.FinalSettle);
-            }
-            else
-            {
-                //重新发牌
-                fsm.HostChangeState(FsmStateType.DealCards);
-            }
-        });
+            m_Owner.HostEnterFsmStateAfter(FsmStateType.FinalSettle, null, GameStatic.FsmStepSettleToAnyInterval);
+        }
+        else
+        {
+            m_Owner.HostEnterFsmStateAfter(FsmStateType.DealCards, null, GameStatic.FsmStepSettleToAnyInterval);
+        }
     }
 
     private void MoveLoseAreaTokensToBag()
