@@ -12,6 +12,7 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
     {
         EventMgr.Instance.Subscribe<CreateLobbyEvent>(OnCreateLobby);
         EventMgr.Instance.Subscribe<JoinLobbyEvent>(OnJoinLobby);
+        EventMgr.Instance.Subscribe<ReceiveMessageEvent<HostLeaveGameNtf>>(OnReceiveHostLeaveGameNtf);
 
         if (NetworkManager.Singleton != null)
         {
@@ -23,6 +24,25 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
 
             // 注册审批回调
             NetworkManager.Singleton.ConnectionApprovalCallback += OnConnectionApproval;
+        }
+    }
+
+    public override void OnDestroy()
+    {
+        base.OnDestroy();
+        if (EventMgr.Instance != null)
+        {
+            EventMgr.Instance.Unsubscribe<CreateLobbyEvent>(OnCreateLobby);
+            EventMgr.Instance.Unsubscribe<JoinLobbyEvent>(OnJoinLobby);
+            EventMgr.Instance.Unsubscribe<ReceiveMessageEvent<HostLeaveGameNtf>>(OnReceiveHostLeaveGameNtf);
+        }
+
+        if (NetworkManager.Singleton != null)
+        {
+            NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
+            NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnected;
+
+            NetworkManager.Singleton.ConnectionApprovalCallback -= OnConnectionApproval;
         }
     }
 
@@ -58,28 +78,10 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
         Debug.Log("[NgoMgr] SceneManager.OnLoadComplete 已订阅");
     }
 
-    public override void OnDestroy()
-    {
-        base.OnDestroy();
-        if (EventMgr.Instance != null)
-        {
-            EventMgr.Instance.Unsubscribe<CreateLobbyEvent>(OnCreateLobby);
-            EventMgr.Instance.Unsubscribe<JoinLobbyEvent>(OnJoinLobby);
-        }
-
-        if (NetworkManager.Singleton != null)
-        {
-            NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
-            NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnected;
-
-            NetworkManager.Singleton.ConnectionApprovalCallback -= OnConnectionApproval;
-        }
-    }
-
     private void OnConnectionApproval(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
     {
         int currentCount = NetworkManager.Singleton.ConnectedClients.Count;
-        int maxPlayers = GameMgr.Instance.LobbyConfig.PlayerNum; // 只计算真人玩家上限
+        int maxPlayers = GameMgr.Instance.LobbyConfig.HumanPlayerNum; // 只计算真人玩家上限
 
         if (currentCount >= maxPlayers)
         {
@@ -192,7 +194,7 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
         GameMgr.Instance.LobbyConfig = new LobbyConfig
         {
             TotalPlayerNum = e.TotalPlayerNum,
-            PlayerNum = e.PlayerNum,
+            HumanPlayerNum = e.PlayerNum,
             AiNum = e.AiNum,
             AiPort = e.AiPort,
             PlayerPort = e.PlayerPort
@@ -290,19 +292,36 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
         if (NetworkManager.Singleton.IsHost)
         {
             // Host 离开：先通知所有 Client 返回 Menu，再自己关闭
-            NotifyAllClientsLeaveGameClientRpc();
-            //ShutdownAndLoadMenu();
+            NotifyAllClientsLeaveGame();
         }
         else if (NetworkManager.Singleton.IsClient)
         {
             // Client 离开：通知 Host 自己离开，再断开
-            NotifyHostLeaveGameServerRpc();
+            NotifyHostLeaveGame();
             ShutdownAndLoadMenu();
         }
         else
         {
             LoadMenuSceneLocal();
         }
+    }
+
+    private void NotifyAllClientsLeaveGame()
+    {
+        if (!NetworkManager.Singleton.IsHost) return;
+
+        HostLeaveGameNtf ntf = new HostLeaveGameNtf();
+        ntf.ClientId = (uint)NetworkManager.Singleton.LocalClientId;
+        NetworkMgr.Instance.SendMessageToHost(MessageId.HostLeaveGameNtf, ntf);
+    }
+
+    private void NotifyHostLeaveGame()
+    {
+        if(!NetworkManager.Singleton.IsClient) return;
+
+        ClientLeaveGameNtf ntf = new ClientLeaveGameNtf();
+        ntf.ClientId = (uint)NetworkManager.Singleton.LocalClientId;
+        NetworkMgr.Instance.SendMessageToHost(MessageId.ClientLeaveGameNtf, ntf);
     }
 
     /// <summary>
@@ -380,6 +399,8 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
                 UIMgr.Instance.ShowDefaultPopup($"连接被拒绝，原因：{reason}");
             else
                 UIMgr.Instance.ShowDefaultPopup("与服务器断开连接");
+
+            ShutdownAndLoadMenu();
         }
     }
 
@@ -414,6 +435,12 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
         //UIMgr.Instance.HideAllPopups();
     }
 
+    private void OnReceiveHostLeaveGameNtf(ReceiveMessageEvent<HostLeaveGameNtf> e)
+    {
+        ShutdownAndLoadMenu();
+        UIMgr.Instance.ShowDefaultPopup("房主已离开游戏，返回主菜单");
+    }
+
     #region RPCs
 
     /// <summary>
@@ -426,57 +453,18 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
     }
 
     /// <summary>
-    /// Host → 广播所有 Client：强制返回 Menu
+    /// Client → 发送自定义消息到 Host
     /// </summary>
-    [ClientRpc]
-    public void NotifyAllClientsLeaveGameClientRpc()
-    {
-        // Host 自身也会收到 ClientRpc，但 ShutdownAndLoadMenu 已在 LeaveGame() 里调用
-        // 只让非 Host 的纯 Client 执行
-        ShutdownAndLoadMenu();
-        UIMgr.Instance.ShowDefaultPopup("房主已离开游戏，返回主菜单");
-    }
-
-    [ClientRpc]
-    public void ReplaceHumanByAIPlayerClientRpc(int seatId, int humanClientId, int aiClientId)
-    {
-        EventMgr.Instance?.Trigger(new ReplaceHumanByAIPlayerEvent
-        {
-            SeatId = seatId,
-            HumanClientId = humanClientId,
-            AIClientId = aiClientId
-        });
-    }
-
     [ServerRpc(RequireOwnership = false)]
-    public void NotifyHostFsmSyncServerRpc(FsmStateType stateType)
+    public void SendMessageToServerRpc(uint id, byte[] bytes)
     {
-        if (!NetworkManager.Singleton.IsHost) return;
-        EventMgr.Instance?.Trigger(NoneArgEventEnum.FsmSyncEvent);
-    }
-
-    [ClientRpc]
-    public void UpdateLobbyPlayerDataClientRpc(PlayerData[] arr, LobbyConfig lobbyConfig)
-    {
-        PlayerMgr.Instance.UpdateConnectedPlayerData(arr, lobbyConfig);
+        NetworkMgr.Instance?.OnReceiveMessage(id, bytes);
     }
 
     [ClientRpc]
     public void SpawnGameSectorsClientRpc()
     {
         BoardGameMgr.Instance.OnSpawnAllGameSectors();
-    }
-
-    [ClientRpc]
-    public void ShowPopupContentClientRpc(string content)
-    {
-        UIMgr.Instance.ShowDefaultPopup(content);
-    }
-
-    [ClientRpc]
-    public void SpawnFactoryDiskPieceTokensClientRpc(int[] factoryData, int cols, bool reset)
-    {
-        BoardGameMgr.Instance.OnSpawnFactoryDiskPieceTokens(factoryData, cols, reset);
     }
 
     [ClientRpc]
@@ -492,61 +480,10 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
     }
 
     [ClientRpc]
-    public void SetCurrentPlayerTurnClientRpc(int seatId)
-    {
-        BoardGameMgr.Instance.OnSetCurrentPlayerTurn(seatId);
-    }
-
-    [ClientRpc]
-    public void DoActionClientRpc(PlayerActionData data)
-    {
-        Debug.Log($"Client received Action: Action: {data}");
-        EventMgr.Instance.Trigger(new PlayerDoActionEvent { Data = data });
-    }
-
-    [ClientRpc]
     public void GameResetClientRpc()
     {
         UIMgr.Instance.HideAllPanels();
         BoardGameMgr.Instance.GameReset();
-    }
-
-    [ServerRpc(RequireOwnership = false)]
-    public void NotifyAddPlayerServerRpc(int clientId,  PlayerLocalInfoData data)
-    {
-        if (!NetworkManager.Singleton.IsHost) return;
-
-        PlayerMgr.Instance.AddPlayer(clientId, data);
-    }
-
-    /// <summary>
-    /// Client → 通知 Host 有玩家主动离开
-    /// </summary>
-    [ServerRpc(RequireOwnership = false)]
-    public void NotifyHostLeaveGameServerRpc(ServerRpcParams rpcParams = default)
-    {
-        ulong clientId = rpcParams.Receive.SenderClientId;
-        Debug.Log($"[NgoMgr] Client {clientId} 主动离开游戏");
-        // 可在此处做房间状态清理，例如移除玩家数据
-        EventMgr.Instance?.Trigger(new PlayerLeaveGameEvent { ClientId = (int)clientId });
-    }
-
-    [ServerRpc(RequireOwnership = false)]
-    public void ChangePlayerReadyStateServerRpc(int clientId, bool v)
-    {
-        PlayerMgr.Instance.PlayerSetReady(clientId, v);
-    }
-
-    [ServerRpc(RequireOwnership = false)]
-    public void ClientDoActionServerRpc(PlayerActionData data)
-    {
-        BoardGameMgr.Instance.ClientDoAction(data);
-    }
-
-    [ServerRpc(RequireOwnership = false)]
-    public void NotifyHostEnterGameServerRpc(int clientId)
-    {
-        BoardGameMgr.Instance.ClientEnterBoardGameScene(clientId);
     }
 }
 

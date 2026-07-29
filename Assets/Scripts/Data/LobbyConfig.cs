@@ -9,7 +9,7 @@ public struct LobbyConfig : INetworkSerializable
     public ushort AiPort;
     public ushort PlayerPort;
     public int TotalPlayerNum;
-    public int PlayerNum;
+    public int HumanPlayerNum;
     public int AiNum;
 
     public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
@@ -17,7 +17,7 @@ public struct LobbyConfig : INetworkSerializable
         serializer.SerializeValue(ref AiPort);
         serializer.SerializeValue(ref PlayerPort);
         serializer.SerializeValue(ref TotalPlayerNum);
-        serializer.SerializeValue(ref PlayerNum);
+        serializer.SerializeValue(ref HumanPlayerNum);
         serializer.SerializeValue(ref AiNum);
     }
 }

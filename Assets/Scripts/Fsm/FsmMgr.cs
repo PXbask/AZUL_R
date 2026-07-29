@@ -62,8 +62,8 @@ public class FsmMgr<TOwner>
         _stateRequestQueue = new Queue<StateRequest>();
         _cts = new CancellationTokenSource();
 
-        EventMgr.Instance?.Subscribe<ReceiveMessageEvent<FsmChangeNtf>>(OnFsmChangeStateNtf);
-        EventMgr.Instance?.Subscribe(NoneArgEventEnum.FsmSyncEvent, OnFsmSyncEvent);
+        EventMgr.Instance?.Subscribe<ReceiveMessageEvent<HostFsmChangeNtf>>(OnHostFsmChangeNtf);
+        EventMgr.Instance?.Subscribe<ReceiveMessageEvent<ClientFsmChangeNtf>>(OnClientFsmChangeNtf);
 
         if (NetworkManager.Singleton && NetworkManager.Singleton.IsHost)
         {
@@ -79,20 +79,7 @@ public class FsmMgr<TOwner>
         _cts = null;
     }
 
-    private void OnFsmSyncEvent()
-    {
-        if(!NetworkManager.Singleton.IsHost) return;
-
-        m_SyncStateDoneCount++;
-        if (m_SyncStateDoneCount > GameMgr.Instance.LobbyConfig.PlayerNum)
-        {
-            Debug.LogWarning("[FsmMgr] SyncStateDoneCount exceeds total player number.");
-            m_SyncStateDoneCount = GameMgr.Instance.LobbyConfig.PlayerNum;
-        }
-        Debug.Log($"[FsmMgr] 当前状态:{_currentState?.GetType().Name} 同步状态: {m_SyncStateDoneCount}/{GameMgr.Instance.LobbyConfig.PlayerNum}");
-    }
-
-    private void OnFsmChangeStateNtf(ReceiveMessageEvent<FsmChangeNtf> e)
+    private void OnHostFsmChangeNtf(ReceiveMessageEvent<HostFsmChangeNtf> e)
     {
         if(e.Message != null)
         {
@@ -128,8 +115,21 @@ public class FsmMgr<TOwner>
         }
         else
         {
-            Debug.LogError("[FsmMgr] Received FsmChangeNtf message is null.");
+            Debug.LogError("[FsmMgr] Received HostFsmChangeNtf message is null.");
         }
+    }
+
+    private void OnClientFsmChangeNtf(ReceiveMessageEvent<ClientFsmChangeNtf> e)
+    {
+        if (!NetworkManager.Singleton.IsHost) return;
+
+        m_SyncStateDoneCount++;
+        if (m_SyncStateDoneCount > GameMgr.Instance.LobbyConfig.HumanPlayerNum)
+        {
+            Debug.LogWarning("[FsmMgr] SyncStateDoneCount exceeds total player number.");
+            m_SyncStateDoneCount = GameMgr.Instance.LobbyConfig.HumanPlayerNum;
+        }
+        Debug.Log($"[FsmMgr] 当前状态:{_currentState?.GetType().Name} 同步状态: {m_SyncStateDoneCount}/{GameMgr.Instance.LobbyConfig.HumanPlayerNum}");
     }
 
     /// <summary>
@@ -162,7 +162,9 @@ public class FsmMgr<TOwner>
         _currentState = nextState;
         _currentState.OnEnter(this, data);
 
-        NgoMgr.Instance.NotifyHostFsmSyncServerRpc(stateType);
+        ClientFsmChangeNtf ntf = new ClientFsmChangeNtf();
+        ntf.NewState = NetworkUtility.MakeNetFsmStateType(stateType);
+        NetworkMgr.Instance?.SendMessageToHost(MessageId.ClientFsmChangeNtf, ntf);
     }
 
     public void HostChangeState(FsmStateType stateType, object data = null)
@@ -196,7 +198,7 @@ public class FsmMgr<TOwner>
 
             // 等待所有客户端完成上一个状态（首次切换直接跳过等待）
             await UniTask.WaitUntil(
-                () => m_FirstChange || m_SyncStateDoneCount >= GameMgr.Instance.LobbyConfig.PlayerNum,
+                () => m_FirstChange || m_SyncStateDoneCount >= GameMgr.Instance.LobbyConfig.HumanPlayerNum,
                 cancellationToken: ct
             ).TimeoutWithoutException(TimeSpan.FromSeconds(10));
 
@@ -215,10 +217,10 @@ public class FsmMgr<TOwner>
             }
             else
             {
-                var ntf = new FsmChangeNtf();
+                var ntf = new HostFsmChangeNtf();
                 ntf.NewState = NetworkUtility.MakeNetFsmStateType(stateType);
                 ntf.StateData = json ?? string.Empty;
-                NetworkMgr.Instance?.SendMessageToAllClients(MessageId.FsmChangeStateNtf, ntf);
+                NetworkMgr.Instance?.SendMessageToAllClients(MessageId.HostFsmChangeNtf, ntf);
             }
         }
     }
@@ -230,8 +232,8 @@ public class FsmMgr<TOwner>
 
     public void OnDestroy()
     {
-        EventMgr.Instance?.Unsubscribe<ReceiveMessageEvent<FsmChangeNtf>>(OnFsmChangeStateNtf);
-        EventMgr.Instance?.Unsubscribe(NoneArgEventEnum.FsmSyncEvent, OnFsmSyncEvent);
+        EventMgr.Instance?.Unsubscribe<ReceiveMessageEvent<HostFsmChangeNtf>>(OnHostFsmChangeNtf);
+        EventMgr.Instance?.Unsubscribe<ReceiveMessageEvent<ClientFsmChangeNtf>>(OnClientFsmChangeNtf);
 
         _cts?.Cancel();
         _cts?.Dispose();

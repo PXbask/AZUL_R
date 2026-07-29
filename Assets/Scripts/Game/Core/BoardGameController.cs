@@ -76,7 +76,7 @@ public class BoardGameController : MonoBehaviour
     private void Start()
     {
         EventMgr.Instance?.Subscribe(NoneArgEventEnum.ClearSceneObjectEvent, OnClearScene);
-        EventMgr.Instance?.Subscribe<ReplaceHumanByAIPlayerEvent>(OnReplaceHumanByAIPlayer);
+        EventMgr.Instance?.Subscribe<ReceiveMessageEvent<ReplaceHumanByAIPlayerNtf>>(OnReplaceHumanByAIPlayer);
     }
 
     private void OnDestroy()
@@ -85,12 +85,17 @@ public class BoardGameController : MonoBehaviour
         GameFsm = null;
 
         EventMgr.Instance?.Unsubscribe(NoneArgEventEnum.ClearSceneObjectEvent, OnClearScene);
-        EventMgr.Instance?.Unsubscribe<ReplaceHumanByAIPlayerEvent>(OnReplaceHumanByAIPlayer);
+        EventMgr.Instance?.Unsubscribe<ReceiveMessageEvent<ReplaceHumanByAIPlayerNtf>>(OnReplaceHumanByAIPlayer);
     }
 
-    private void OnReplaceHumanByAIPlayer(ReplaceHumanByAIPlayerEvent e)
+    private void OnReplaceHumanByAIPlayer(ReceiveMessageEvent<ReplaceHumanByAIPlayerNtf> e)
     {
-        var seatId = e.SeatId;
+        if(e.Message == null)
+        {
+            Debug.LogError("OnReplaceHumanByAIPlayer: message is null");
+            return;
+        }
+        var seatId = e.Message.SeatId;
         var humanPlayer = GetBoardGamePlayerBySeatId(seatId);
 
         //寻找旧的玩家物体和数据
@@ -99,19 +104,19 @@ public class BoardGameController : MonoBehaviour
             //移除原有玩家的游戏物体(已经因为断线自动Despawn了)
 
             //创建新的AI玩家物体, 只有host会执行
-            SpawnPlayerControllerObject(e.AIClientId);
+            SpawnPlayerControllerObject(e.Message.AiClientId);
 
             var playerBoard = humanPlayer.PlayerBoard;
             //移除原有玩家数据
             BoardGamePlayerDic.Remove(seatId);
             //创建AI玩家
-            MakeBoardGamePlayer(e.AIClientId, seatId, playerBoard);
+            MakeBoardGamePlayer(e.Message.AiClientId, seatId, playerBoard);
 
             //发送事件
             EventMgr.Instance.Trigger(new ReplaceHumanByAIPlayerCompleteEvent
             {
-                HumanClientId = e.HumanClientId,
-                AIClientId = e.AIClientId,
+                HumanClientId = e.Message.HumanClientId,
+                AIClientId = e.Message.AiClientId,
                 SeatId = seatId
             });
         }
@@ -161,7 +166,7 @@ public class BoardGameController : MonoBehaviour
         if (NetworkManager.Singleton.IsHost)
         {
             //三秒后开始对局
-            NgoMgr.Instance.ShowPopupContentClientRpc("游戏马上开始");
+            UIMgr.Instance.ShowBoardcastPopup("游戏马上开始");
             DOVirtual.DelayedCall(3f, () =>
             {
                 HostChangeState(FsmStateType.SelectFirstPlayer);
@@ -323,7 +328,7 @@ public class BoardGameController : MonoBehaviour
         }
         else
         {
-            Debug.LogError($"cannot find table with gameid:{playerData.GameId}");
+            Debug.LogError($"cannot find table with gameid:{playerData.SeatId}");
         }
     }
 
@@ -391,7 +396,12 @@ public class BoardGameController : MonoBehaviour
                 factoryData[i * cols + j] = val;
             }
         }
-        NgoMgr.Instance.SpawnFactoryDiskPieceTokensClientRpc(factoryData, cols, reset);
+
+        DealCardsNtf ntf = new DealCardsNtf();
+        ntf.FactoryDiskCards.Add(factoryData);
+        ntf.Column = cols;
+        ntf.Reset = reset;
+        NetworkMgr.Instance.SendMessageToAllClients(MessageId.DealCardsNtf, ntf);
     }
 
     /// <summary>
@@ -510,7 +520,10 @@ public class BoardGameController : MonoBehaviour
 
         ++StepNumThisRound;
         int currentSeat = GetCurrentSeatIdByRoundNum(StepNumThisRound);
-        NgoMgr.Instance.SetCurrentPlayerTurnClientRpc(currentSeat);
+
+        ChangePlayerTurnNtf ntf = new ChangePlayerTurnNtf();
+        ntf.CurrentPlayerSeatId = currentSeat;
+        NetworkMgr.Instance.SendMessageToAllClients(MessageId.ChangePlayerTurnNtf, ntf);
     }
 
     private bool MidFactoryAreaEmpty()
@@ -699,7 +712,7 @@ public class BoardGameController : MonoBehaviour
         if (NetworkManager.Singleton.IsHost)
         {
             //三秒后开始对局
-            NgoMgr.Instance.ShowPopupContentClientRpc("游戏马上开始");
+            UIMgr.Instance.ShowBoardcastPopup("游戏马上开始");
             GameFsm.HostChangeState(FsmStateType.SelectFirstPlayer);
         }
     }

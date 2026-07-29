@@ -9,11 +9,11 @@ public enum PlayerType
     AI = 2,
 }
 
-public struct PlayerData : INetworkSerializable
+public struct PlayerLobbyData : INetworkSerializable
 {
     public PlayerType PlayerType;
     public int ClientId;
-    public int GameId;
+    public int SeatId;
     public FixedString64Bytes Name;
     public FixedString64Bytes AvatarId;
     public bool IsReady;
@@ -22,38 +22,38 @@ public struct PlayerData : INetworkSerializable
     {
         serializer.SerializeValue(ref PlayerType);
         serializer.SerializeValue(ref ClientId);
-        serializer.SerializeValue(ref GameId);
+        serializer.SerializeValue(ref SeatId);
         serializer.SerializeValue(ref Name);
         serializer.SerializeValue(ref AvatarId);
         serializer.SerializeValue(ref IsReady);
     }
 
-    public static bool operator ==(PlayerData a, PlayerData b)
+    public static bool operator ==(PlayerLobbyData a, PlayerLobbyData b)
     {
         return a.PlayerType == b.PlayerType
             && a.ClientId == b.ClientId
-            && a.GameId == b.GameId
+            && a.SeatId == b.SeatId
             && a.Name == b.Name
             && a.IsReady == b.IsReady;
     }
 
-    public static bool operator !=(PlayerData a, PlayerData b)
+    public static bool operator !=(PlayerLobbyData a, PlayerLobbyData b)
     {
         return !(a == b);
     }
 
     public override bool Equals(object obj)
     {
-        return obj is PlayerData other && this == other;
+        return obj is PlayerLobbyData other && this == other;
     }
 
     public override int GetHashCode()
     {
-        return System.HashCode.Combine(PlayerType, ClientId, GameId, Name.GetHashCode(), IsReady);
+        return System.HashCode.Combine(PlayerType, ClientId, SeatId, Name.GetHashCode(), IsReady);
     }
 
     public override string ToString()
     {
-        return $"{{ PlayerType = {PlayerType}, ClientId = {ClientId}, GameId = {GameId}, Name = {Name}, AvatarId = {AvatarId}, IsReady = {IsReady} }}";
+        return $"{{ PlayerType = {PlayerType}, ClientId = {ClientId}, GameId = {SeatId}, Name = {Name}, AvatarId = {AvatarId}, IsReady = {IsReady} }}";
     }
 }

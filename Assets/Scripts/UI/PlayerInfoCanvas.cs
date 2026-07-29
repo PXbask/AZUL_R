@@ -32,7 +32,7 @@ public class PlayerInfoCanvas : MonoPoolObject
         }
     }
 
-    private void OnPlayerDataChanged(PlayerData previousValue, PlayerData newValue)
+    private void OnPlayerDataChanged(PlayerLobbyData previousValue, PlayerLobbyData newValue)
     {
         playerNameText.text = newValue.Name.ToString();
         playerAvatarImg.sprite = DataMgr.Instance.GetLocalAvatarSprite(newValue.AvatarId.ToString());

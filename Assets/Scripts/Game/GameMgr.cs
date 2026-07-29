@@ -17,20 +17,20 @@ public class GameMgr : MonoSingleton<GameMgr>
 
     private void Start()
     {
-        EventMgr.Instance?.Subscribe<ReplaceHumanByAIPlayerEvent>(OnReplaceHumanByAIPlayer);
+        EventMgr.Instance?.Subscribe<ReceiveMessageEvent<ReplaceHumanByAIPlayerNtf>>(OnReplaceHumanByAIPlayer);
     }
 
     protected override void OnDestroy()
     {
-        EventMgr.Instance?.Unsubscribe<ReplaceHumanByAIPlayerEvent>(OnReplaceHumanByAIPlayer);
+        EventMgr.Instance?.Unsubscribe<ReceiveMessageEvent<ReplaceHumanByAIPlayerNtf>>(OnReplaceHumanByAIPlayer);
 
         base.OnDestroy();
     }
 
-    private void OnReplaceHumanByAIPlayer(ReplaceHumanByAIPlayerEvent e)
+    private void OnReplaceHumanByAIPlayer(ReceiveMessageEvent<ReplaceHumanByAIPlayerNtf> e)
     {
         var lobbyData = LobbyConfig;
-        --lobbyData.PlayerNum;
+        --lobbyData.HumanPlayerNum;
         ++lobbyData.AiNum;
         LobbyConfig = lobbyData;
     }

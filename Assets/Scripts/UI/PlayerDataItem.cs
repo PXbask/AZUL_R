@@ -19,7 +19,7 @@ public class PlayerDataItem : MonoPoolObject
     [SerializeField]
     private Image AvatarImg;
 
-    private PlayerData m_PlayerData;
+    private PlayerLobbyData m_PlayerData;
 
     public override string PoolKey => nameof(PlayerDataItem);
 
@@ -42,11 +42,14 @@ public class PlayerDataItem : MonoPoolObject
     {
         if (ReadyToggle.interactable)
         {
-            NgoMgr.Instance.ChangePlayerReadyStateServerRpc(m_PlayerData.ClientId, b);
+            ClientChangePlayerReadyNtf ntf = new ClientChangePlayerReadyNtf();
+            ntf.ClientId = (uint)m_PlayerData.ClientId;
+            ntf.IsReady = b;
+            NetworkMgr.Instance.SendMessageToHost(MessageId.ClientChangePlayerReadyNtf, ntf);
         }
     }
 
-    public void UpdateView(PlayerData data)
+    public void UpdateView(PlayerLobbyData data)
     {
         m_PlayerData = data;
 

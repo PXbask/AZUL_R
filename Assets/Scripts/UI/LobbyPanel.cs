@@ -78,7 +78,7 @@ public class LobbyPanel : MonoBehaviour
 
     private void UpdateView()
     {
-        List<PlayerData> dataList = PlayerMgr.Instance.GetAllPlayers();
+        List<PlayerLobbyData> dataList = PlayerMgr.Instance.GetAllPlayers();
 
         // 回收多余的 item
         for (int i = ActiveItems.Count - 1; i >= dataList.Count; i--)

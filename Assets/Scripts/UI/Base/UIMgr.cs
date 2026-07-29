@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
@@ -17,6 +19,22 @@ public class UIMgr : MonoSingleton<UIMgr>
 
     // 弹窗栈
     private readonly LinkedList<UIPanel> _popupStack = new LinkedList<UIPanel>();
+
+    private void Start()
+    {
+        EventMgr.Instance.Subscribe<ReceiveMessageEvent<ShowPopupContentNtf>>(OnShowPopupContentNtf);
+    }
+
+    protected override void OnDestroy()
+    {
+        if (EventMgr.Instance)
+        {
+            EventMgr.Instance.Unsubscribe<ReceiveMessageEvent<ShowPopupContentNtf>>(OnShowPopupContentNtf);
+        }
+
+        ReleaseAll();
+        base.OnDestroy();
+    }
 
     #region 注册
 
@@ -247,18 +265,32 @@ public class UIMgr : MonoSingleton<UIMgr>
         HideAllPanels();
     }
 
-    protected override void OnDestroy()
-    {
-        ReleaseAll();
-        base.OnDestroy();
-    }
-
     #endregion
 
     public void ShowDefaultPopup(string message)
     {
         Debug.Log(message);
         ShowPopup(UIStatic.PopupPanelName, message);
+    }
+
+    public void ShowBoardcastPopup(string message)
+    {
+        if (!NetworkManager.Singleton.IsHost) return;
+
+        ShowPopupContentNtf ntf = new ShowPopupContentNtf();
+        ntf.Content = message;
+        NetworkMgr.Instance?.SendMessageToAllClients(MessageId.ShowPopupContentNtf, ntf);
+    }
+
+    private void OnShowPopupContentNtf(ReceiveMessageEvent<ShowPopupContentNtf> e)
+    {
+        if(e.Message == null)
+        {
+            Debug.LogError("[UIMgr] Received ShowPopupContentNtf with null message.");
+            return;
+        }
+
+        ShowDefaultPopup(e.Message.Content);
     }
 }
 

@@ -147,11 +147,11 @@ public class DataMgr : MonoSingleton<DataMgr>
 
         private void OnPlayerConnected(LocalClientConnectedEvent e)
         {
-            PlayerLocalInfoData data = new PlayerLocalInfoData();
-            data.Name = Name.Value;
-            data.AvatarId = AvatarId.Value;
-
-            NgoMgr.Instance?.NotifyAddPlayerServerRpc((int)e.ClientId, data);
+            ClientProvideLocalInfoNtf ntf = new ClientProvideLocalInfoNtf();
+            ntf.ClientId = (uint)e.ClientId;
+            ntf.Name = Name.Value;
+            ntf.AvatarId = AvatarId.Value;
+            NetworkMgr.Instance?.SendMessageToHost(MessageId.ClientProvideLocalInfoNtf, ntf);
         }
 
         public void OnDestroy()

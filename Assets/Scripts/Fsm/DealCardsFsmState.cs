@@ -73,6 +73,8 @@ public class DealCardsFsmState : FsmState<BoardGameController>
     {
         if(!NetworkManager.Singleton.IsHost) return;
 
-        NgoMgr.Instance.SetCurrentPlayerTurnClientRpc(e.SeatId);
+        ChangePlayerTurnNtf ntf = new ChangePlayerTurnNtf();
+        ntf.CurrentPlayerSeatId = e.SeatId;
+        NetworkMgr.Instance.SendMessageToAllClients(MessageId.ChangePlayerTurnNtf, ntf);
     }
 }

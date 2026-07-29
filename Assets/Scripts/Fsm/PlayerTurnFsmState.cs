@@ -30,8 +30,8 @@ public class PlayerTurnFsmState : FsmState<BoardGameController>
         m_SelectedPieceToken = null;
 
         EventMgr.Instance.Subscribe<ReceiveAIServerMsgEvent>(OnReceiveAIServerMsgEvent);
-        EventMgr.Instance.Subscribe<PlayerDoActionEvent>(OnPlayerDoAction);
         EventMgr.Instance.Subscribe<ReplaceHumanByAIPlayerCompleteEvent>(OnReplaceHumanByAIPlayerComplete);
+        EventMgr.Instance.Subscribe<ReceiveMessageEvent<PlayerActionResponse>>(OnPlayerActionResponse);
 
         AnalysisSeatIdFromData(data);
         SetGameRoundStepIndex();
@@ -111,10 +111,30 @@ public class PlayerTurnFsmState : FsmState<BoardGameController>
     public override void OnLeave(FsmMgr<BoardGameController> fsm)
     {
         base.OnLeave(fsm);
-        EventMgr.Instance?.Unsubscribe<PlayerDoActionEvent>(OnPlayerDoAction);
+        EventMgr.Instance?.Unsubscribe<ReceiveMessageEvent<PlayerActionResponse>>(OnPlayerActionResponse);
         EventMgr.Instance?.Unsubscribe<ReceiveAIServerMsgEvent>(OnReceiveAIServerMsgEvent);
         EventMgr.Instance?.Unsubscribe<ReplaceHumanByAIPlayerCompleteEvent>(OnReplaceHumanByAIPlayerComplete);
         ClearSelectedPieceTokenWithAnim();
+    }
+
+    private void OnPlayerActionResponse(ReceiveMessageEvent<PlayerActionResponse> e)
+    {
+        if(e.Message == null)
+        {
+            Debug.LogError("Received PlayerActionResponse message is null.");
+            return;
+        }
+
+        var action = e.Message.ActionData;
+        if (action.SeatId == m_SeatId)
+        {
+            var playerAction = NetworkUtility.MakePlayerActionData(action);
+            ExecuteAIAction(playerAction);
+        }
+        else
+        {
+            Debug.LogError($"Received action for seat {action.SeatId}, but current turn is for seat {m_SeatId}. Ignoring action.");
+        }
     }
 
     private void OnReceiveAIServerMsgEvent(ReceiveAIServerMsgEvent e)
@@ -127,7 +147,7 @@ public class PlayerTurnFsmState : FsmState<BoardGameController>
             return;
         }
 
-        NgoMgr.Instance.ClientDoActionServerRpc(e.AIAction);
+        ExecuteAIAction(e.AIAction);
     }
 
     private void OnReplaceHumanByAIPlayerComplete(ReplaceHumanByAIPlayerCompleteEvent e)
@@ -140,19 +160,6 @@ public class PlayerTurnFsmState : FsmState<BoardGameController>
             {
                 TrySendCurrentBoardInfoToAIServerOnce(m_SeatId);
             }
-        }
-    }
-
-    private void OnPlayerDoAction(PlayerDoActionEvent e)
-    {
-        var action = e.Data;
-        if (action.SeatId == m_SeatId)
-        {
-            ExecuteAIAction(action);
-        }
-        else
-        {
-            Debug.LogError($"Received action for seat {action.SeatId}, but current turn is for seat {m_SeatId}. Ignoring action.");
         }
     }
 
@@ -313,17 +320,27 @@ public class PlayerTurnFsmState : FsmState<BoardGameController>
     /// </summary>
     private void TrySendOperationToServerOnce(int clientId, int seatId, int factoryId, PieceColorType colorType, int row)
     {
+        var data = new PlayerActionData
+        {
+            ClientId = clientId,
+            SeatId = seatId,
+            FactoryId = factoryId,
+            ColorType = colorType,
+            Row = row
+        };
+        TrySendOperationToServerOnce(data);
+    }
+
+    private void TrySendOperationToServerOnce(PlayerActionData data)
+    {
         if (!m_IsSendOperation)
         {
             m_IsSendOperation = true;
-            NgoMgr.Instance.ClientDoActionServerRpc(new PlayerActionData
-            {
-                ClientId = clientId,
-                SeatId = seatId,
-                FactoryId = factoryId,
-                ColorType = colorType,
-                Row = row
-            });
+
+            PlayerActionRequest request = new();
+            NetPlayerActionData nData = NetworkUtility.MakeNetPlayerActionData(data);
+            request.ActionData = nData;
+            NetworkMgr.Instance.SendMessageToHost(MessageId.PlayerDoActionReq, request);
         }
         else
         {

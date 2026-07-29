@@ -2,16 +2,21 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Burst.Intrinsics;
 using Unity.Netcode;
 using UnityEngine;
 
 public class PlayerMgr : MonoSingleton<PlayerMgr>
 {
-    private Dictionary<int, PlayerData> ConnectedPlayerData = new Dictionary<int, PlayerData>();
+    private Dictionary<int, PlayerLobbyData> ConnectedPlayerData = new Dictionary<int, PlayerLobbyData>();
 
     private void Start()
     {
-        EventMgr.Instance.Subscribe<PlayerDisconnectedEvent>(OnClientDisconnected);
+        EventMgr.Instance?.Subscribe<PlayerDisconnectedEvent>(OnClientDisconnected);
+        EventMgr.Instance?.Subscribe<ReceiveMessageEvent<UpdateLobbyInfoNtf>>(OnUpdateLobbyInfo);
+        EventMgr.Instance?.Subscribe<ReceiveMessageEvent<ClientProvideLocalInfoNtf>>(OnClientProvideLocalInfoNtf);
+        EventMgr.Instance?.Subscribe<ReceiveMessageEvent<ClientChangePlayerReadyNtf>>(OnClientChangePlayerReadyNtf);
+        EventMgr.Instance?.Subscribe<ReceiveMessageEvent<ClientLeaveGameNtf>>(OnClientLeaveGameNtf);
 
         NetworkManager.Singleton.OnClientStopped += OnClientStopped;
     }
@@ -21,6 +26,10 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
         if (EventMgr.Instance != null)
         {
             EventMgr.Instance.Unsubscribe<PlayerDisconnectedEvent>(OnClientDisconnected);
+            EventMgr.Instance.Unsubscribe<ReceiveMessageEvent<UpdateLobbyInfoNtf>>(OnUpdateLobbyInfo);
+            EventMgr.Instance.Unsubscribe<ReceiveMessageEvent<ClientProvideLocalInfoNtf>>(OnClientProvideLocalInfoNtf);
+            EventMgr.Instance.Unsubscribe<ReceiveMessageEvent<ClientChangePlayerReadyNtf>>(OnClientChangePlayerReadyNtf);
+            EventMgr.Instance.Unsubscribe<ReceiveMessageEvent<ClientLeaveGameNtf>>(OnClientLeaveGameNtf);
         }
 
         if (NetworkManager.Singleton != null)
@@ -29,6 +38,70 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
         }
 
         base.OnDestroy();
+    }
+
+    private void OnClientLeaveGameNtf(ReceiveMessageEvent<ClientLeaveGameNtf> e)
+    {
+        if(e.Message == null)
+        {
+            Debug.LogError("OnClientLeaveGameNtf error, e.Message is null");
+            return;
+        }
+
+        if(ConnectedPlayerData.TryGetValue((int)e.Message.ClientId, out PlayerLobbyData playerData))
+        {
+            UIMgr.Instance?.ShowDefaultPopup($"玩家 {e.Message.ClientId} 离开了游戏");
+            RemovePlayer((int)e.Message.ClientId);
+        }
+        else
+        {
+            Debug.LogError("OnClientLeaveGameNtf error, playerData not found for clientId: " + e.Message.ClientId);
+        }
+    }
+
+    private void OnClientChangePlayerReadyNtf(ReceiveMessageEvent<ClientChangePlayerReadyNtf> e)
+    {
+        if(e.Message == null)
+        {
+            Debug.LogError("OnClientChangePlayerReadyNtf error, e.Message is null");
+            return;
+        }
+
+        if(!NetworkManager.Singleton.IsHost)
+        {
+            Debug.LogError("OnClientChangePlayerReadyNtf error, not host");
+            return;
+        }
+
+        if (ConnectedPlayerData.TryGetValue((int)e.Message.ClientId, out PlayerLobbyData playerData))
+        {
+            playerData.IsReady = e.Message.IsReady;
+            ConnectedPlayerData[(int)e.Message.ClientId] = playerData;
+            SendUpdateLobbyInfoNtf();
+        }
+    }
+
+    private void OnClientProvideLocalInfoNtf(ReceiveMessageEvent<ClientProvideLocalInfoNtf> e)
+    {
+        if (!NetworkManager.Singleton.IsHost) return;
+
+        if(e.Message == null)
+        {
+            Debug.LogError("OnClientProvideLocalInfoNtf error, e.Message is null");
+            return;
+        }
+
+        AddPlayer((int)e.Message.ClientId, e.Message);
+    }
+
+    private void OnUpdateLobbyInfo(ReceiveMessageEvent<UpdateLobbyInfoNtf> e)
+    {
+        if(e.Message ==null)
+        {
+            Debug.LogError("OnUpdateLobbyInfo error, e.Message is null");
+            return;
+        }
+        UpdateConnectedPlayerData(e.Message);
     }
 
     private void OnClientStopped(bool obj)
@@ -42,7 +115,7 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
         RemovePlayer((int)e.ClientId);
     }
 
-    public void AddPlayer(int clientId, PlayerLocalInfoData data)
+    public void AddPlayer(int clientId, ClientProvideLocalInfoNtf data)
     {
         Debug.Log($"AddPlayer clientId: {clientId}, PlayerLocalInfoData: {data}");
 
@@ -57,11 +130,11 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
             return;
         }
 
-        PlayerData playerData = new PlayerData()
+        PlayerLobbyData playerData = new PlayerLobbyData()
         {
             PlayerType = PlayerType.Human,
             ClientId = (int)clientId,
-            GameId = ConnectedPlayerData.Count,
+            SeatId = ConnectedPlayerData.Count,
             Name = data.Name.ToString(),
             AvatarId = data.AvatarId.ToString(),
             IsReady = false,
@@ -74,11 +147,11 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
             for (int i = 0; i < GameMgr.Instance.LobbyConfig.AiNum; i++)
             {
                 int fakeClientId = -i - 1;
-                PlayerData tdata = new PlayerData()
+                PlayerLobbyData tdata = new PlayerLobbyData()
                 {
                     PlayerType = PlayerType.AI,
                     ClientId = fakeClientId,
-                    GameId = ConnectedPlayerData.Count,
+                    SeatId = ConnectedPlayerData.Count,
                     Name = string.Format("Ai [{0}]", fakeClientId),
                     AvatarId = GameStatic.DefaultAvatarId,
                     IsReady = true,
@@ -87,7 +160,7 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
             }
         }
 
-        NgoMgr.Instance.UpdateLobbyPlayerDataClientRpc(ConnectedPlayerData.Values.ToArray(), GameMgr.Instance.LobbyConfig);
+        SendUpdateLobbyInfoNtf();
     }
 
     public void RemovePlayer(int clientId)
@@ -97,13 +170,13 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
             Debug.LogError("Only host can remove player.");
             return;
         }
-        if (!ConnectedPlayerData.TryGetValue(clientId, out PlayerData value))
+        if (!ConnectedPlayerData.TryGetValue(clientId, out PlayerLobbyData value))
         {
             Debug.LogWarning($"PlayerDataDict does not contain clientId {clientId}");
         }
         else
         {
-            PlayerData data = ConnectedPlayerData[clientId];
+            PlayerLobbyData data = ConnectedPlayerData[clientId];
             ConnectedPlayerData.Remove(clientId);
 
             //如果是host移除左右Ai玩家
@@ -124,22 +197,28 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
                     var currentAiNum = GameMgr.Instance.LobbyConfig.AiNum + 1;
 
                     int fakeClientId = -currentAiNum;
-                    PlayerData tdata = new PlayerData()
+                    PlayerLobbyData tdata = new PlayerLobbyData()
                     {
                         PlayerType = PlayerType.AI,
                         ClientId = fakeClientId,
-                        GameId = value.GameId,
+                        SeatId = value.SeatId,
                         Name = data.Name,
                         AvatarId = data.AvatarId,
                         IsReady = true,
                     };
                     ConnectedPlayerData[fakeClientId] = tdata;
 
-                    NgoMgr.Instance.ReplaceHumanByAIPlayerClientRpc(value.GameId, clientId, fakeClientId);
+                    ReplaceHumanByAIPlayerNtf ntf = new ReplaceHumanByAIPlayerNtf()
+                    {
+                        SeatId = value.SeatId,
+                        HumanClientId = clientId,
+                        AiClientId = fakeClientId,
+                    };
+                    NetworkMgr.Instance.SendMessageToAllClients(MessageId.ReplaceHumanByAIPlayerNtf, ntf);
                 }
             }
 
-            NgoMgr.Instance.UpdateLobbyPlayerDataClientRpc(ConnectedPlayerData.Values.ToArray(), GameMgr.Instance.LobbyConfig);
+            SendUpdateLobbyInfoNtf();
         }
     }
 
@@ -148,27 +227,42 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
         return ConnectedPlayerData.ContainsKey(clientId);
     }
 
-    public void UpdateConnectedPlayerData(PlayerData[] dataArr, LobbyConfig config)
+    private void SendUpdateLobbyInfoNtf()
+    {
+        UpdateLobbyInfoNtf ntf = new UpdateLobbyInfoNtf();
+        NetPlayerLobbyData netPlayerData = null;
+        foreach (var item in ConnectedPlayerData.Values)
+        {
+            netPlayerData = NetworkUtility.MakeNetPlayerLobbyData(item);
+            ntf.PlayerDatas.Add(netPlayerData);
+        }
+        ntf.LobbyConfig = NetworkUtility.MakeNetLobbyConfig(GameMgr.Instance.LobbyConfig);
+        NetworkMgr.Instance?.SendMessageToAllClients(MessageId.UpdateLobbyInfoNtf, ntf);
+    }
+
+    public void UpdateConnectedPlayerData(UpdateLobbyInfoNtf message)
     {
         if (!NetworkManager.Singleton.IsHost)
         {
             ConnectedPlayerData.Clear();
-            foreach (var data in dataArr)
+            foreach (var data in message.PlayerDatas)
             {
-                ConnectedPlayerData[data.ClientId] = data;
+                var playerData = NetworkUtility.MakePlayerLobbyData(data);
+                ConnectedPlayerData[data.ClientId] = playerData;
             }
 
-            GameMgr.Instance.LobbyConfig = config;
+            var lobbyConfig = NetworkUtility.MakeLobbyConfig(message.LobbyConfig);
+            GameMgr.Instance.LobbyConfig = lobbyConfig;
         }
 
         EventMgr.Instance.Trigger(NoneArgEventEnum.PlayerStateChangeEvent);
     }
 
-    public List<PlayerData> GetAllPlayers()
+    public List<PlayerLobbyData> GetAllPlayers()
     {
         int localClientId = (int)NetworkManager.Singleton.LocalClientId;
 
-        List<PlayerData> result = new List<PlayerData>(ConnectedPlayerData.Values);
+        List<PlayerLobbyData> result = new List<PlayerLobbyData>(ConnectedPlayerData.Values);
         result.Sort((a, b) =>
         {
             bool aIsLocal = a.ClientId == localClientId;
@@ -185,9 +279,9 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
         return result;
     }
 
-    public List<PlayerData> GetAllAiPlayer()
+    public List<PlayerLobbyData> GetAllAiPlayer()
     {
-        List<PlayerData> res = new List<PlayerData>();
+        List<PlayerLobbyData> res = new List<PlayerLobbyData>();
         var players = GetAllPlayers();
         foreach (var player in players)
         {
@@ -199,23 +293,11 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
         return res;
     }
 
-    public void PlayerSetReady(int clientId, bool v)
-    {
-        if (ContainPlayer(clientId))
-        {
-            var data = ConnectedPlayerData[clientId];
-            data.IsReady = v;
-            ConnectedPlayerData[clientId] = data;
-
-            NgoMgr.Instance.UpdateLobbyPlayerDataClientRpc(ConnectedPlayerData.Values.ToArray(), GameMgr.Instance.LobbyConfig);
-        }
-    }
-
     public int GetSeatIdByClientId(int clientId)
     {
         if (ContainPlayer(clientId))
         {
-            return ConnectedPlayerData[clientId].GameId;
+            return ConnectedPlayerData[clientId].SeatId;
         }
         else
         {
@@ -224,9 +306,9 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
         }
     }
 
-    public PlayerData GetPlayerDataByClientId(int clientId)
+    public PlayerLobbyData GetPlayerDataByClientId(int clientId)
     {
-        if (ConnectedPlayerData.TryGetValue(clientId, out PlayerData data))
+        if (ConnectedPlayerData.TryGetValue(clientId, out PlayerLobbyData data))
         {
             return data;
         }
@@ -234,11 +316,11 @@ public class PlayerMgr : MonoSingleton<PlayerMgr>
         return default;
     }
 
-    public PlayerData GetPlayerDataBySeatId(int gameId)
+    public PlayerLobbyData GetPlayerDataBySeatId(int gameId)
     {
         foreach (var data in ConnectedPlayerData.Values)
         {
-            if (data.GameId == gameId)
+            if (data.SeatId == gameId)
             {
                 return data;
             }

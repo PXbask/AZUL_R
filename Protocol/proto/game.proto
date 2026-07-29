@@ -17,6 +17,15 @@ enum NetFsmStateType{
     FSM_STATE_SETTLE_PANEL = 7;
 }
 
+enum NetPieceColorType{
+    PIECE_COLOR_NONE = 0;
+    PIECE_COLOR_BLUE = 1;
+    PIECE_COLOR_YELLOW = 2;
+    PIECE_COLOR_RED = 3;
+    PIECE_COLOR_BLACK = 4;
+    PIECE_COLOR_WHITE = 5;
+}
+
 message NetBoardGamePlayerData{
     int32 player_client_id = 1;
     int32 player_seat_id = 2;
@@ -25,12 +34,98 @@ message NetBoardGamePlayerData{
     int32 player_score = 5;
 }
 
+message NetPlayerLobbyData{
+    NetPlayerType player_type = 1;
+    int32 client_id = 2;
+    int32 seat_id = 3;
+    string player_name = 4;
+    string avatar_id = 5;
+    bool is_ready = 6;
+}
+
+message NetLobbyConfigData{
+    uint32 ai_port = 1; // Port for AI players to connect
+    uint32 player_port = 2; // Port for human players to connect
+    int32 total_player_num = 3; // Total number of players in the lobby
+    int32 human_player_num = 4; // Number of human players in the lobby
+    int32 ai_player_num = 5; // Number of AI players in the lobby
+}
+
+message NetPlayerActionData{
+    int32 client_id = 1; // The client ID of the player performing the action
+    int32 seat_id = 2; // The seat ID of the player performing the action
+    int32 factory_id = 3;
+    NetPieceColorType color_type = 4;
+    int32 row = 5;
+}
+
 message GameResultNtf{
     repeated int32 winner_ids = 1; // List of winner player IDs
     repeated NetBoardGamePlayerData player_datas = 2; // List of player data
 }
 
-message FsmChangeNtf{
+message HostFsmChangeNtf{
     NetFsmStateType new_state = 1; // The new state of the FSM
     string state_data = 2; // Additional data related to the state change
+}
+
+message ClientFsmChangeNtf{
+    NetFsmStateType new_state = 1; // The new state of the FSM
+}
+
+message ReplaceHumanByAIPlayerNtf{
+    int32 seat_id = 1; // The seat ID of the player being replaced
+    int32 human_client_id = 2; // The client ID of the human player being replaced
+    int32 ai_client_id = 3; // The client ID of the AI player replacing the human
+}
+
+message UpdateLobbyInfoNtf{
+    repeated NetPlayerLobbyData player_datas = 1; // List of player data in the lobby
+    NetLobbyConfigData lobby_config = 2; // Configuration of the lobby
+}
+
+message DealCardsNtf{
+    repeated int32 factory_disk_cards = 1; // List of player IDs who received cards
+    int32 column = 2; // The column where the cards are dealt
+    bool reset = 3; // Indicates if the cards are being reset
+}
+
+message ChangePlayerTurnNtf{
+    int32 current_player_seat_id = 1; // The seat ID of the player whose turn it is
+}
+
+message ClientProvideLocalInfoNtf{
+    uint32 client_id = 1; // The client ID of the player providing local info
+    string name = 2; // The name of the player
+    string avatar_id = 3; // The avatar ID of the player
+}
+
+message ClientChangePlayerReadyNtf{
+    uint32 client_id = 1; // The client ID of the player changing readiness
+    bool is_ready = 2; // Indicates if the player is ready or not
+}
+
+message ClientLeaveGameNtf{
+    uint32 client_id = 1; // The client ID of the player leaving the game
+}
+
+message HostLeaveGameNtf{
+    uint32 client_id = 1; // The client ID of the host leaving the game
+}
+
+message ClientEnterGameSceneNtf{
+    uint32 client_id = 1; // The client ID of the player entering the game scene
+}
+
+message ShowPopupContentNtf{
+    string content = 1; // The content to be displayed in the popup
+}
+
+message PlayerActionRequest{
+    NetPlayerActionData action_data = 1; // The action data sent by the player
+}
+
+message PlayerActionResponse{
+    bool success = 1; // Indicates if the action was successful
+    NetPlayerActionData action_data = 2; // The action data sent by the player
 }

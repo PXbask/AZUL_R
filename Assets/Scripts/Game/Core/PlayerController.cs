@@ -22,7 +22,7 @@ public class PlayerController : NetPoolObject
 
     private PlayerInfoCanvas m_PlayerInfoCanvas;
 
-    public NetworkVariable<PlayerData> PlayerData = new NetworkVariable<PlayerData>(default);
+    public NetworkVariable<PlayerLobbyData> PlayerData = new NetworkVariable<PlayerLobbyData>(default);
 
     /// <summary>所有已生成的玩家控制器，key = ClientId</summary>
     public static readonly Dictionary<ulong, PlayerController> AllHuman = new Dictionary<ulong, PlayerController>();
@@ -58,13 +58,13 @@ public class PlayerController : NetPoolObject
         PlayerModel.SetActive(false);
     }
 
-    private void OnPlayerDataChanged(PlayerData previousValue, PlayerData newValue)
+    private void OnPlayerDataChanged(PlayerLobbyData previousValue, PlayerLobbyData newValue)
     {
         Debug.Log($"PlayerData changed for ClientId {OwnerClientId}: {previousValue} -> {newValue}");
         ApplyPlayerData(newValue);
     }
 
-    private void ApplyPlayerData(PlayerData newValue)
+    private void ApplyPlayerData(PlayerLobbyData newValue)
     {
         All[newValue.ClientId] = this;
         bool isHuman = newValue.PlayerType == PlayerType.Human;

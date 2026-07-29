@@ -41,7 +41,7 @@ public class SelectFirstPlayerFsmState : FsmState<BoardGameController>
         {
             owner.FirstPlayerSeatId = seatId;
             owner.StepNumThisRound = 0;
-            NgoMgr.Instance.ShowPopupContentClientRpc($"选择的首位玩家:{player.PlayerName}");
+            UIMgr.Instance.ShowBoardcastPopup($"选择的首位玩家:{player.PlayerName}");
         }
 
         //发牌

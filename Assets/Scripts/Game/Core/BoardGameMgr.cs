@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Xml;
 using Unity.Netcode;
 using UnityEngine;
@@ -16,6 +17,10 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
     {
         EventMgr.Instance.Subscribe<NgoLoadSceneCompleteEvent>(OnNgoLoadSceneComplete);
         EventMgr.Instance.Subscribe<ReceiveMessageEvent<GameResultNtf>>(OnGameResultNtf);
+        EventMgr.Instance.Subscribe<ReceiveMessageEvent<DealCardsNtf>>(OnDealCardsNtf);
+        EventMgr.Instance.Subscribe<ReceiveMessageEvent<PlayerActionRequest>>(OnPlayerActionRequest);
+        EventMgr.Instance.Subscribe<ReceiveMessageEvent<ChangePlayerTurnNtf>>(OnChangePlayerTurnNtf);
+        EventMgr.Instance.Subscribe<ReceiveMessageEvent<ClientEnterGameSceneNtf>>(OnClientEnterGameSceneNtf);
 
         NetworkManager.Singleton.OnClientStarted += OnClientStarted;
         NetworkManager.Singleton.OnClientStopped += OnClientStopped;
@@ -28,6 +33,10 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
         {
             EventMgr.Instance.Unsubscribe<NgoLoadSceneCompleteEvent>(OnNgoLoadSceneComplete);
             EventMgr.Instance.Unsubscribe<ReceiveMessageEvent<GameResultNtf>>(OnGameResultNtf);
+            EventMgr.Instance.Unsubscribe<ReceiveMessageEvent<DealCardsNtf>>(OnDealCardsNtf);   
+            EventMgr.Instance.Unsubscribe<ReceiveMessageEvent<PlayerActionRequest>>(OnPlayerActionRequest);
+            EventMgr.Instance.Unsubscribe<ReceiveMessageEvent<ChangePlayerTurnNtf>>(OnChangePlayerTurnNtf);
+            EventMgr.Instance.Unsubscribe<ReceiveMessageEvent<ClientEnterGameSceneNtf>>(OnClientEnterGameSceneNtf);
         }
 
         if (NetworkManager.Singleton)
@@ -77,22 +86,64 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
             }
 
             //通知Host本地初始化完毕
-            NgoMgr.Instance.NotifyHostEnterGameServerRpc(e.ClientId);
+            ClientEnterGameSceneNtf ntf = new ClientEnterGameSceneNtf();
+            ntf.ClientId = (uint)e.ClientId;
+            NetworkMgr.Instance?.SendMessageToHost(MessageId.ClientEnterGameSceneNtf, ntf);
+
             if (NetworkManager.Singleton.IsHost)
             {
                 //AI也要通知Host
                 var aiPlayers = PlayerMgr.Instance.GetAllAiPlayer();
                 foreach (var aiPlayer in aiPlayers)
                 {
-                    NgoMgr.Instance.NotifyHostEnterGameServerRpc(aiPlayer.ClientId);
+                    ClientEnterBoardGameScene(aiPlayer.ClientId);
                 }
             }
         }
     }
 
+    private void OnClientEnterGameSceneNtf(ReceiveMessageEvent<ClientEnterGameSceneNtf> e)
+    {
+        ClientEnterBoardGameScene((int)e.Message.ClientId);
+    }
+
     private void OnGameResultNtf(ReceiveMessageEvent<GameResultNtf> e)
     {
         UIMgr.Instance.ShowPanel(UIStatic.SettlePanelName, e.Message);
+    }
+
+    private void OnDealCardsNtf(ReceiveMessageEvent<DealCardsNtf> e)
+    {
+        if(e.Message == null)
+        {
+            Debug.LogError("DealCardsNtf message is null!");
+            return;
+        }
+        OnSpawnFactoryDiskPieceTokens(e.Message.FactoryDiskCards.ToArray(), e.Message.Column, e.Message.Reset);
+    }
+
+    private void OnPlayerActionRequest(ReceiveMessageEvent<PlayerActionRequest> e)
+    {
+        PlayerActionResponse response = new();
+        response.Success = false;
+
+        if (!NetworkManager.Singleton.IsHost)
+        {
+            Debug.LogError("Only Host can call ClientDoAction!");
+            return;
+        }
+
+        if(e.Message == null)
+        {
+            Debug.LogError("PlayerActionRequest message is null!");
+            return;
+        }
+
+        Debug.Log($"Host received Action:Action: {e.Message}");
+
+        response.Success = true;
+        response.ActionData = e.Message.ActionData;
+        NetworkMgr.Instance?.SendMessageToAllClients(MessageId.PlayerDoActionRsp, response);
     }
 
     /// <summary>
@@ -161,7 +212,7 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
         GameController.SpawnAllGameSectors();
     }
 
-    public void OnSpawnFactoryDiskPieceTokens(int[] factoryData, int cols, bool reset)
+    private void OnSpawnFactoryDiskPieceTokens(int[] factoryData, int cols, bool reset)
     {
         GameController.SpawnFactoryDiskPieceTokens(factoryData, cols, reset);
     }
@@ -176,20 +227,13 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
         GameController.SpawnScorePieceToken();
     }
 
-    public void OnSetCurrentPlayerTurn(int seatId)
+    public void OnChangePlayerTurnNtf(ReceiveMessageEvent<ChangePlayerTurnNtf> e)
     {
-        GameController.SetCurrentPlayerTurn(seatId);
-    }
-
-    public void ClientDoAction(PlayerActionData data)
-    {
-        if(!NetworkManager.Singleton.IsHost)
+        if(e.Message == null)
         {
-            Debug.LogError("Only Host can call ClientDoAction!");
+            Debug.LogError("ChangePlayerTurnNtf message is null!");
             return;
         }
-
-        Debug.Log($"Host received Action:Action: {data}");
-        NgoMgr.Instance.DoActionClientRpc(data);
+        GameController.SetCurrentPlayerTurn(e.Message.CurrentPlayerSeatId);
     }
 }
