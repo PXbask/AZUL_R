@@ -5,6 +5,7 @@ using DG.Tweening;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -144,6 +145,7 @@ public class BoardGameController : MonoBehaviour
         }
 
         ResetRound();
+        SpawnAllGameSectors();
     }
 
     public void ResetRound()
@@ -163,17 +165,22 @@ public class BoardGameController : MonoBehaviour
         ResetRound();
         ProcessEnterIdleFsm();
 
+        ResetAllPlayerControllerTrans();
+    }
+
+    /// <summary>
+    /// 开始倒计时，延迟进入选择首位玩家状态
+    /// </summary>
+    public void StartSelectFirstPlayerAfterS(float seconds)
+    {
         if (NetworkManager.Singleton.IsHost)
         {
-            //三秒后开始对局
-            UIMgr.Instance.ShowBoardcastPopup("游戏马上开始");
-            DOVirtual.DelayedCall(3f, () =>
+            DOVirtual.DelayedCall(seconds, () =>
             {
+                UIMgr.Instance.ShowBoardcastPopup("游戏马上开始");
                 HostChangeState(FsmStateType.SelectFirstPlayer);
             });
         }
-
-        ResetAllPlayerControllerTrans();
     }
 
     public void ProcessEnterIdleFsm()
@@ -375,10 +382,6 @@ public class BoardGameController : MonoBehaviour
 
             //移除首位token
             m_RemainPieceIds.Remove(0);
-            NgoMgr.Instance.SpawnFirstTokenClientRpc();
-
-            //为每位玩家生成分数token
-            NgoMgr.Instance.SpawnScorePieceTokenClientRpc();
         }
 
         //计算工厂圆盘的牌
@@ -460,7 +463,7 @@ public class BoardGameController : MonoBehaviour
         SpawnNormalPieceToArea(0, BoardGameUtility.GetEmptyTokenAreaInMidArea());
     }
 
-    public void SpawnFactoryDiskPieceTokens(int[] factoryData, int cols, bool reset)
+    public void SpawnFactoryDiskPieceTokens(int[] factoryData, int cols)
     {
         if (factoryData == null)
         {
@@ -708,13 +711,6 @@ public class BoardGameController : MonoBehaviour
 
             MakeBoardGamePlayer(clientId, seatId, board);
         }
-
-        if (NetworkManager.Singleton.IsHost)
-        {
-            //三秒后开始对局
-            UIMgr.Instance.ShowBoardcastPopup("游戏马上开始");
-            GameFsm.HostChangeState(FsmStateType.SelectFirstPlayer);
-        }
     }
 
     private void SpawnAllFactoryDisks()
@@ -851,5 +847,24 @@ public class BoardGameController : MonoBehaviour
             factoriesData.Add(factoryData);
         }
         return factoriesData;
+    }
+
+    public void OnDealCardsNtf(DealCardsNtf ntf)
+    {
+        if(ntf == null)
+        {
+            Debug.LogError("OnDealCardsNtf: message is null");
+            return;
+        }
+
+        if (ntf.Reset)
+        {
+            //为每位玩家生成首位token
+            SpawnFirstToken();
+            //为每位玩家生成分数token
+            SpawnScorePieceToken();
+        }
+
+        SpawnFactoryDiskPieceTokens(ntf.FactoryDiskCards.ToArray(), ntf.Column);
     }
 }

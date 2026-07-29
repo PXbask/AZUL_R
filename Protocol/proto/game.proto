@@ -121,6 +121,9 @@ message ShowPopupContentNtf{
     string content = 1; // The content to be displayed in the popup
 }
 
+message GameResetNtf{
+}
+
 message PlayerActionRequest{
     NetPlayerActionData action_data = 1; // The action data sent by the player
 }

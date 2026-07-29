@@ -113,6 +113,10 @@ public class NetworkMgr : MonoSingleton<NetworkMgr>
                 message = ShowPopupContentNtf.Parser.ParseFrom(data);
                 EventMgr.Instance?.Trigger(new ReceiveMessageEvent<ShowPopupContentNtf>(message as ShowPopupContentNtf));
                 break;
+            case MessageId.GameResetNtf:
+                message = GameResetNtf.Parser.ParseFrom(data);
+                EventMgr.Instance?.Trigger(new ReceiveMessageEvent<GameResetNtf>(message as GameResetNtf));
+                break;
             case MessageId.PlayerDoActionReq:
                 message = PlayerActionRequest.Parser.ParseFrom(data);
                 EventMgr.Instance?.Trigger(new ReceiveMessageEvent<PlayerActionRequest>(message as PlayerActionRequest));

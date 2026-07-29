@@ -21,6 +21,7 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
         EventMgr.Instance.Subscribe<ReceiveMessageEvent<PlayerActionRequest>>(OnPlayerActionRequest);
         EventMgr.Instance.Subscribe<ReceiveMessageEvent<ChangePlayerTurnNtf>>(OnChangePlayerTurnNtf);
         EventMgr.Instance.Subscribe<ReceiveMessageEvent<ClientEnterGameSceneNtf>>(OnClientEnterGameSceneNtf);
+        EventMgr.Instance.Subscribe<ReceiveMessageEvent<GameResetNtf>>(OnGameResetNtf);
 
         NetworkManager.Singleton.OnClientStarted += OnClientStarted;
         NetworkManager.Singleton.OnClientStopped += OnClientStopped;
@@ -37,6 +38,7 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
             EventMgr.Instance.Unsubscribe<ReceiveMessageEvent<PlayerActionRequest>>(OnPlayerActionRequest);
             EventMgr.Instance.Unsubscribe<ReceiveMessageEvent<ChangePlayerTurnNtf>>(OnChangePlayerTurnNtf);
             EventMgr.Instance.Unsubscribe<ReceiveMessageEvent<ClientEnterGameSceneNtf>>(OnClientEnterGameSceneNtf);
+            EventMgr.Instance.Unsubscribe<ReceiveMessageEvent<GameResetNtf>>(OnGameResetNtf);
         }
 
         if (NetworkManager.Singleton)
@@ -102,6 +104,18 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
         }
     }
 
+    private void OnGameResetNtf(ReceiveMessageEvent<GameResetNtf> e)
+    {
+        if (e.Message == null)
+        {
+            Debug.LogError("GameResetNtf message is null!");
+            return;
+        }
+
+        UIMgr.Instance.HideAllPanels();
+        GameReset();
+    }
+
     private void OnClientEnterGameSceneNtf(ReceiveMessageEvent<ClientEnterGameSceneNtf> e)
     {
         ClientEnterBoardGameScene((int)e.Message.ClientId);
@@ -119,7 +133,8 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
             Debug.LogError("DealCardsNtf message is null!");
             return;
         }
-        OnSpawnFactoryDiskPieceTokens(e.Message.FactoryDiskCards.ToArray(), e.Message.Column, e.Message.Reset);
+
+        GameController.OnDealCardsNtf(e.Message);
     }
 
     private void OnPlayerActionRequest(ReceiveMessageEvent<PlayerActionRequest> e)
@@ -169,7 +184,6 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
         if (PlayerEnterSceneFlag.Count == GameMgr.Instance.LobbyConfig.TotalPlayerNum)
         {
             GameController.ProcessEnterIdleFsm();
-            NgoMgr.Instance.SpawnGameSectorsClientRpc();
         }
     }
 
@@ -202,29 +216,6 @@ public class BoardGameMgr : MonoSingleton<BoardGameMgr>
 
         // 发送 JSON 字符串到 AI 服务器
         AIMgr.Instance.SendNetworkMessage(jsonString);
-    }
-
-    /// <summary>
-    /// 生成桌游用到的所有的游戏板块
-    /// </summary>
-    public void OnSpawnAllGameSectors()
-    {
-        GameController.SpawnAllGameSectors();
-    }
-
-    private void OnSpawnFactoryDiskPieceTokens(int[] factoryData, int cols, bool reset)
-    {
-        GameController.SpawnFactoryDiskPieceTokens(factoryData, cols, reset);
-    }
-
-    public void OnSpawnFirstToken()
-    {
-        GameController.SpawnFirstToken();
-    }
-
-    public void OnSpawnScorePieceToken()
-    {
-        GameController.SpawnScorePieceToken();
     }
 
     public void OnChangePlayerTurnNtf(ReceiveMessageEvent<ChangePlayerTurnNtf> e)

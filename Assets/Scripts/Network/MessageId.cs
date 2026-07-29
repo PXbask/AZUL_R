@@ -20,6 +20,7 @@ public enum MessageId : uint
     HostLeaveGameNtf = Ntf + 11,
     ClientEnterGameSceneNtf = Ntf + 12,
     ShowPopupContentNtf = Ntf + 13,
+    GameResetNtf = Ntf + 14,
 
     Request = 1000,
     PlayerDoActionReq = Request + 1,

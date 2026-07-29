@@ -108,7 +108,11 @@ public class SettlePanel : UIPanel
 
     private void OnClickRestartBtn()
     {
-        NgoMgr.Instance.GameResetClientRpc();
+        if(NetworkManager.Singleton.IsHost)
+        {
+            GameResetNtf ntf = new GameResetNtf();
+            NetworkMgr.Instance.SendMessageToAllClients(MessageId.GameResetNtf, ntf);
+        }
     }
 
     private void OnClickHideBtn()

@@ -460,31 +460,6 @@ public class NgoMgr : NetcodeSingleton<NgoMgr>
     {
         NetworkMgr.Instance?.OnReceiveMessage(id, bytes);
     }
-
-    [ClientRpc]
-    public void SpawnGameSectorsClientRpc()
-    {
-        BoardGameMgr.Instance.OnSpawnAllGameSectors();
-    }
-
-    [ClientRpc]
-    public void SpawnFirstTokenClientRpc()
-    {
-        BoardGameMgr.Instance.OnSpawnFirstToken();
-    }
-
-    [ClientRpc]
-    public void SpawnScorePieceTokenClientRpc()
-    {
-        BoardGameMgr.Instance.OnSpawnScorePieceToken();
-    }
-
-    [ClientRpc]
-    public void GameResetClientRpc()
-    {
-        UIMgr.Instance.HideAllPanels();
-        BoardGameMgr.Instance.GameReset();
-    }
 }
 
 #endregion

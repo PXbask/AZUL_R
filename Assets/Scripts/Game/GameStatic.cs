@@ -40,4 +40,6 @@ public static class GameStatic
 #else
     public static readonly string DefaultRuntimeLogPath = Path.GetDirectoryName(Application.dataPath);
 #endif
+
+    public static readonly float FsmIdleToSelectFirstInterval = 3f;
 }

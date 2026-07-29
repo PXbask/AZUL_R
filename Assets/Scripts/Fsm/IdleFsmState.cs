@@ -14,10 +14,15 @@ public class IdleFsmState : FsmState<BoardGameController>
         public string Timestamp;
     }
 
+    private bool m_Flag;
     private StateData m_Data;
+    private BoardGameController m_Owner;
+
     public override void OnEnter(FsmMgr<BoardGameController> fsm, object data = null)
     {
         base.OnEnter(fsm, data);
+        m_Flag = false;
+        m_Owner = fsm.Owner;
 
         if (data is StateData idleData)
         {
@@ -33,5 +38,14 @@ public class IdleFsmState : FsmState<BoardGameController>
     public override void OnUpdate(FsmMgr<BoardGameController> fsm)
     {
         base.OnUpdate(fsm);
+        if (!m_Flag)
+        {
+            m_Flag  = true;
+
+            if(NetworkManager.Singleton.IsHost)
+            {
+                m_Owner.StartSelectFirstPlayerAfterS(GameStatic.FsmIdleToSelectFirstInterval);
+            }
+        }
     }
 }
