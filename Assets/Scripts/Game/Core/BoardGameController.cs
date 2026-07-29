@@ -680,11 +680,13 @@ public class BoardGameController : MonoBehaviour
         var obj = NgoMgr.Instance.SpawnFromPool<PlayerController>(
             clientId >= 0 ? (ulong)clientId : NetworkManager.Singleton.LocalClientId,
             seatTrans.position,
-            seatTrans.rotation);
-
-        var pc = obj.GetComponent<PlayerController>();
-        var v = PlayerMgr.Instance.GetPlayerDataBySeatId(seatId);
-        pc.PlayerData.Value = v;
+            seatTrans.rotation,
+            false,
+            pc =>
+            {
+                var v = PlayerMgr.Instance.GetPlayerDataBySeatId(seatId);
+                pc.SetPlayerData(v);
+            });
     }
 
     /// <summary>

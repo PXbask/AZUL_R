@@ -21,7 +21,7 @@ public class PlayerInfoCanvas : MonoPoolObject
             m_PlayerCtrl = value;
             if (m_PlayerCtrl != null)
             {
-                playerNameText.text = m_PlayerCtrl.PlayerData.Value.Name.ToString();
+                UpdateInfo(m_PlayerCtrl.PlayerData.Value);
                 m_PlayerCtrl.PlayerData.OnValueChanged += OnPlayerDataChanged;
             }
             else
@@ -32,11 +32,16 @@ public class PlayerInfoCanvas : MonoPoolObject
         }
     }
 
+    private void UpdateInfo(PlayerLobbyData data)
+    {
+        if (data == default) return;
+        playerNameText.text = data.Name.ToString();
+        playerAvatarImg.sprite = DataMgr.Instance.GetLocalAvatarSprite(data.AvatarId.ToString());
+    }
+
     private void OnPlayerDataChanged(PlayerLobbyData previousValue, PlayerLobbyData newValue)
     {
-        if (newValue == default) return;
-        playerNameText.text = newValue.Name.ToString();
-        playerAvatarImg.sprite = DataMgr.Instance.GetLocalAvatarSprite(newValue.AvatarId.ToString());
+        UpdateInfo(newValue);
     }
 
     public override void OnSpawn()

@@ -28,6 +28,12 @@ public class PlayerController : NetPoolObject
     public static readonly Dictionary<ulong, PlayerController> AllHuman = new Dictionary<ulong, PlayerController>();
     public static readonly Dictionary<int, PlayerController> All = new Dictionary<int, PlayerController>();
 
+    public void SetPlayerData(PlayerLobbyData data)
+    {
+        PlayerData.Initialize(this);
+        PlayerData.Value = data;
+    }
+
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
